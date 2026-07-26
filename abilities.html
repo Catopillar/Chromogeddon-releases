@@ -1,0 +1,1653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chromogeddon — Abilities</title>
+  <style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #ffffff;
+  --fg:          #111111;
+  --fg2:         #555566;
+  --row-alt:     #f6f6f9;
+  --header-bg:   #ededf2;
+  --border:      #ddddea;
+  --muted:       #99998a;
+  --chip-bg:     #ededf2;
+  --chip-fg:     #333344;
+  --chip-act-fg: #ffffff;
+  --boon:        #1d7d3a;
+  --bane:        #b03030;
+  --mod:         #888880;
+  --sep:         #bbbbcc;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 13px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:          #18181e;
+    --fg:          #e8e8f0;
+    --fg2:         #9898a8;
+    --row-alt:     #20202a;
+    --header-bg:   #28283a;
+    --border:      #30303e;
+    --muted:       #66666e;
+    --chip-bg:     #26263a;
+    --chip-fg:     #c8c8e0;
+    --chip-act-fg: #111118;
+    --boon:        #4db870;
+    --bane:        #e07070;
+    --mod:         #888890;
+    --sep:         #44445a;
+  }
+}
+
+body { background: var(--bg); color: var(--fg); padding: 20px 24px; }
+
+.note {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 14px;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--row-alt);
+  line-height: 1.6;
+}
+.note code { font-family: monospace; }
+
+h1 { font-size: 18px; margin-bottom: 4px; }
+
+.fwver {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+.fwver b { color: var(--fg); font-weight: 600; }
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+#search {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 13px;
+  width: 220px;
+  outline-color: #7F77DD;
+}
+
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip {
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--chip-bg);
+  color: var(--chip-fg);
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: background 0.12s, color 0.12s;
+  user-select: none;
+}
+.chip:hover { opacity: 0.8; }
+.chip.active { color: var(--chip-act-fg); border-color: transparent; }
+
+.table-wrap { overflow-x: auto; }
+
+.grid {
+  display: grid;
+  grid-template-columns: 160px 1fr 50px 50px 50px 55px 55px 1.2fr;
+  column-gap: 14px;
+  align-items: baseline;
+}
+
+.header-row {
+  padding: 6px 10px;
+  background: var(--header-bg);
+  border-radius: 6px 6px 0 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg2);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.header-row .r { text-align: right; }
+.header-row .sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s, color 0.12s;
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+}
+.header-row .sortable:hover { background: var(--border); color: var(--fg); }
+.header-row .sortable.active { color: var(--fg); }
+.sort-ind {
+  font-size: 9px;
+  margin-left: 4px;
+  opacity: 0.35;
+  display: inline-block;
+}
+.sortable.active .sort-ind { opacity: 1; }
+
+.row {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.row:nth-child(odd) { background: var(--row-alt); }
+.row:hover { background: var(--header-bg); }
+.row.hidden { display: none; }
+
+.tri {
+  font-size: 8px;
+  color: var(--muted);
+  display: inline-block;
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+.row.open .tri { transform: rotate(90deg); }
+
+.ld {
+  grid-column: 1 / -1;
+  display: none;
+  font-size: 12px;
+  color: var(--fg2);
+  line-height: 1.6;
+  padding: 5px 0 3px;
+  margin-top: 4px;
+  border-top: 1px dashed var(--border);
+}
+.row.open .ld { display: block; }
+
+.cn { display: flex; align-items: center; gap: 4px; font-weight: 500; }
+.dot { font-size: 9px; flex-shrink: 0; }
+.cr { color: var(--fg2); font-size: 12px; }
+.cg { text-align: right; font-variant-numeric: tabular-nums; color: var(--fg2); font-size: 12px; }
+.cp { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
+.cc { text-align: right; font-variant-numeric: tabular-nums; color: var(--fg2); }
+.cs { text-align: right; font-variant-numeric: tabular-nums; color: var(--fg2); font-size: 12px; }
+.ce { font-size: 12px; }
+
+span.boon     { color: var(--boon); }
+span.bane     { color: var(--bane); }
+span.self-bane{ color: var(--bane); opacity: 0.75; }
+span.mod      { color: var(--mod); }
+span.sep      { color: var(--sep); margin: 0 1px; }
+span.none     { color: var(--muted); }
+
+.count { font-size: 11px; color: var(--muted); margin-top: 10px; }
+
+#chip-all.active { background: var(--fg2); color: var(--bg); border-color: transparent; }
+
+.and-label {
+  font-size: 11px;
+  color: var(--muted);
+  align-self: center;
+  display: none;
+}
+.and-label.visible { display: inline; }
+
+.chip[data-type="CLAW"].active { background: #D85A30; }
+.chip[data-type="SHELL"].active { background: #888780; }
+.chip[data-type="WING"].active { background: #1D9E75; }
+.chip[data-type="FANG"].active { background: #639922; }
+.chip[data-type="FIRE"].active { background: #E24B4A; }
+.chip[data-type="WATER"].active { background: #378ADD; }
+.chip[data-type="AIR"].active { background: #5DCAA5; }
+.chip[data-type="EARTH"].active { background: #BA7517; }
+.chip[data-type="LIGHT"].active { background: #EF9F27; }
+.chip[data-type="DARK"].active { background: #7F77DD; }
+  </style>
+</head>
+<body>
+
+<p class="note">Auto-generated from <code>tools/abilities.json</code> — do not edit by hand.
+Run <code>python tools/build_abilities.py</code> from the repo root to regenerate.
+Last updated: 2026-07-26 18:09 UTC</p>
+
+<h1>Chromogeddon — Abilities (99)</h1>
+<p class="fwver">Firmware <b>v0.8</b> &middot; build <b>b466</b> &middot; PvP protocol <b>v39</b></p>
+
+<div class="controls">
+  <input type="search" id="search" placeholder="Search name / recipe / effect / description…">
+  <div class="chips">
+    <button class="chip" id="chip-all">All</button>
+    <button class="chip" data-type="CLAW" style="border-color:#D85A30">CLAW</button>
+    <button class="chip" data-type="SHELL" style="border-color:#888780">SHELL</button>
+    <button class="chip" data-type="WING" style="border-color:#1D9E75">WING</button>
+    <button class="chip" data-type="FANG" style="border-color:#639922">FANG</button>
+    <button class="chip" data-type="FIRE" style="border-color:#E24B4A">FIRE</button>
+    <button class="chip" data-type="WATER" style="border-color:#378ADD">WATER</button>
+    <button class="chip" data-type="AIR" style="border-color:#5DCAA5">AIR</button>
+    <button class="chip" data-type="EARTH" style="border-color:#BA7517">EARTH</button>
+    <button class="chip" data-type="LIGHT" style="border-color:#EF9F27">LIGHT</button>
+    <button class="chip" data-type="DARK" style="border-color:#7F77DD">DARK</button>
+    <span class="and-label" id="and-label">— all selected genes must match</span>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <div class="header-row grid">
+    <div class="sortable" data-sort="name">Name<span class="sort-ind">&#8597;</span></div>
+    <div class="sortable" data-sort="recipe">Recipe<span class="sort-ind">&#8597;</span></div>
+    <div class="sortable r" data-sort="genes">Genes<span class="sort-ind">&#8597;</span></div>
+    <div class="sortable r" data-sort="pwr">Pwr<span class="sort-ind">&#8597;</span></div>
+    <div class="sortable r" data-sort="cd">CD<span class="sort-ind">&#8597;</span></div>
+    <div class="sortable r" data-sort="raw">Raw<span class="sort-ind">&#8597;</span></div>
+    <div class="sortable r" data-sort="delta">Δ<span class="sort-ind">&#8597;</span></div>
+    <div>Effects</div>
+  </div>
+  <div class="row grid" data-idx="0" data-name="???" data-recipe="any unrecognized" data-genes="1" data-pwr="30" data-cd="0" data-raw="30.0000" data-delta="1.8170" data-types="" data-effects="">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#999">●</span>&nbsp;???</div>
+    <div class="cr">any unrecognized</div>
+    <div class="cg">1</div>
+    <div class="cp">30</div>
+    <div class="cc">—</div>
+    <div class="cs">30.0</div>
+    <div class="cs">+1.8</div>
+    <div class="ce"><span class="none">—</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="1" data-name="Bash" data-recipe="built-in" data-genes="1" data-pwr="40" data-cd="0" data-raw="40.0000" data-delta="11.8170" data-types="" data-effects="">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#999">●</span>&nbsp;Bash</div>
+    <div class="cr">built-in</div>
+    <div class="cg">1</div>
+    <div class="cp">40</div>
+    <div class="cc">—</div>
+    <div class="cs">40.0</div>
+    <div class="cs">+11.8</div>
+    <div class="ce"><span class="none">—</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="2" data-name="Scratch" data-recipe="CLAW" data-genes="1" data-pwr="50" data-cd="0" data-raw="54.0000" data-delta="25.8170" data-types="CLAW" data-effects="">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#D85A30">●</span>&nbsp;Scratch</div>
+    <div class="cr"><span style="color:#D85A30;font-weight:500">CLAW</span></div>
+    <div class="cg">1</div>
+    <div class="cp">50</div>
+    <div class="cc">—</div>
+    <div class="cs">54.0</div>
+    <div class="cs">+25.8</div>
+    <div class="ce"><span class="none">—</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="3" data-name="Harden" data-recipe="SHELL" data-genes="1" data-pwr="40" data-cd="1" data-raw="26.8560" data-delta="-1.3270" data-types="SHELL" data-effects="DEF_UP 8/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#888780">●</span>&nbsp;Harden</div>
+    <div class="cr"><span style="color:#888780;font-weight:500">SHELL</span></div>
+    <div class="cg">1</div>
+    <div class="cp">40</div>
+    <div class="cc">1</div>
+    <div class="cs">26.9</div>
+    <div class="cs">-1.3</div>
+    <div class="ce"><span class="boon">DEF_UP 8/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="4" data-name="Gust" data-recipe="WING" data-genes="1" data-pwr="50" data-cd="1" data-raw="27.0000" data-delta="-1.1830" data-types="WING" data-effects="">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#1D9E75">●</span>&nbsp;Gust</div>
+    <div class="cr"><span style="color:#1D9E75;font-weight:500">WING</span></div>
+    <div class="cg">1</div>
+    <div class="cp">50</div>
+    <div class="cc">1</div>
+    <div class="cs">27.0</div>
+    <div class="cs">-1.2</div>
+    <div class="ce"><span class="none">—</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="5" data-name="Bite" data-recipe="FANG" data-genes="1" data-pwr="45" data-cd="1" data-raw="29.3660" data-delta="1.1830" data-types="FANG" data-effects="POISON 4/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#639922">●</span>&nbsp;Bite</div>
+    <div class="cr"><span style="color:#639922;font-weight:500">FANG</span></div>
+    <div class="cg">1</div>
+    <div class="cp">45</div>
+    <div class="cc">1</div>
+    <div class="cs">29.4</div>
+    <div class="cs">+1.2</div>
+    <div class="ce"><span class="bane">POISON 4/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="6" data-name="Scorch" data-recipe="FIRE" data-genes="1" data-pwr="40" data-cd="1" data-raw="26.7000" data-delta="-1.4830" data-types="FIRE" data-effects="POISON 6/2t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#E24B4A">●</span>&nbsp;Scorch</div>
+    <div class="cr"><span style="color:#E24B4A;font-weight:500">FIRE</span></div>
+    <div class="cg">1</div>
+    <div class="cp">40</div>
+    <div class="cc">1</div>
+    <div class="cs">26.7</div>
+    <div class="cs">-1.5</div>
+    <div class="ce"><span class="bane">POISON 6/2t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="7" data-name="Surge" data-recipe="WATER" data-genes="1" data-pwr="40" data-cd="1" data-raw="24.3375" data-delta="-3.8455" data-types="WATER" data-effects="SPD_DOWN 5/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#378ADD">●</span>&nbsp;Surge</div>
+    <div class="cr"><span style="color:#378ADD;font-weight:500">WATER</span></div>
+    <div class="cg">1</div>
+    <div class="cp">40</div>
+    <div class="cc">1</div>
+    <div class="cs">24.3</div>
+    <div class="cs">-3.8</div>
+    <div class="ce"><span class="bane">SPD_DOWN 5/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="8" data-name="Gale" data-recipe="AIR" data-genes="1" data-pwr="40" data-cd="1" data-raw="24.1500" data-delta="-4.0330" data-types="AIR" data-effects="ATK_UP 3/2t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#5DCAA5">●</span>&nbsp;Gale</div>
+    <div class="cr"><span style="color:#5DCAA5;font-weight:500">AIR</span></div>
+    <div class="cg">1</div>
+    <div class="cp">40</div>
+    <div class="cc">1</div>
+    <div class="cs">24.2</div>
+    <div class="cs">-4.0</div>
+    <div class="ce"><span class="boon">ATK_UP 3/2t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="9" data-name="Tremor" data-recipe="EARTH" data-genes="1" data-pwr="55" data-cd="1" data-raw="32.2000" data-delta="4.0170" data-types="EARTH" data-effects="CRIT_DOWN 10/1t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#BA7517">●</span>&nbsp;Tremor</div>
+    <div class="cr"><span style="color:#BA7517;font-weight:500">EARTH</span></div>
+    <div class="cg">1</div>
+    <div class="cp">55</div>
+    <div class="cc">1</div>
+    <div class="cs">32.2</div>
+    <div class="cs">+4.0</div>
+    <div class="ce"><span class="bane">CRIT_DOWN 10/1t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="10" data-name="Radiance" data-recipe="LIGHT" data-genes="1" data-pwr="45" data-cd="2" data-raw="21.2000" data-delta="-6.9830" data-types="LIGHT" data-effects="CLEANSE">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#EF9F27">●</span>&nbsp;Radiance</div>
+    <div class="cr"><span style="color:#EF9F27;font-weight:500">LIGHT</span></div>
+    <div class="cg">1</div>
+    <div class="cp">45</div>
+    <div class="cc">2</div>
+    <div class="cs">21.2</div>
+    <div class="cs">-7.0</div>
+    <div class="ce"><span class="boon">CLEANSE</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="11" data-name="Drain" data-recipe="DARK" data-genes="1" data-pwr="40" data-cd="1" data-raw="32.4000" data-delta="4.2170" data-types="DARK" data-effects="DRAIN 50%">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#7F77DD">●</span>&nbsp;Drain</div>
+    <div class="cr"><span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">1</div>
+    <div class="cp">40</div>
+    <div class="cc">1</div>
+    <div class="cs">32.4</div>
+    <div class="cs">+4.2</div>
+    <div class="ce"><span class="boon">DRAIN 50%</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="12" data-name="Twin Slash" data-recipe="CLAW x2" data-genes="2" data-pwr="70" data-cd="2" data-raw="27.7330" data-delta="5.2530" data-types="CLAW" data-effects="DEF_DOWN 5/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#D85A30">●</span>&nbsp;Twin Slash</div>
+    <div class="cr"><span style="color:#D85A30;font-weight:500">CLAW</span> x2</div>
+    <div class="cg">2</div>
+    <div class="cp">70</div>
+    <div class="cc">2</div>
+    <div class="cs">27.7</div>
+    <div class="cs">+5.3</div>
+    <div class="ce"><span class="bane">DEF_DOWN 5/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="13" data-name="Shell Bash" data-recipe="SHELL x2" data-genes="2" data-pwr="60" data-cd="3" data-raw="22.4500" data-delta="-0.0300" data-types="SHELL" data-effects="STUN 1t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#888780">●</span>&nbsp;Shell Bash</div>
+    <div class="cr"><span style="color:#888780;font-weight:500">SHELL</span> x2</div>
+    <div class="cg">2</div>
+    <div class="cp">60</div>
+    <div class="cc">3</div>
+    <div class="cs">22.4</div>
+    <div class="cs">-0.0</div>
+    <div class="ce"><span class="bane">STUN 1t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="14" data-name="Wind Slash" data-recipe="WING x2" data-genes="2" data-pwr="60" data-cd="2" data-raw="23.4250" data-delta="0.9450" data-types="WING" data-effects="SPD_UP 5/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#1D9E75">●</span>&nbsp;Wind Slash</div>
+    <div class="cr"><span style="color:#1D9E75;font-weight:500">WING</span> x2</div>
+    <div class="cg">2</div>
+    <div class="cp">60</div>
+    <div class="cc">2</div>
+    <div class="cs">23.4</div>
+    <div class="cs">+0.9</div>
+    <div class="ce"><span class="boon">SPD_UP 5/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="15" data-name="Twin Fang" data-recipe="FANG x2" data-genes="2" data-pwr="60" data-cd="3" data-raw="24.1057" data-delta="1.6257" data-types="FANG" data-effects="CRIT_UP 15/3t POISON 6/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#639922">●</span>&nbsp;Twin Fang</div>
+    <div class="cr"><span style="color:#639922;font-weight:500">FANG</span> x2</div>
+    <div class="cg">2</div>
+    <div class="cp">60</div>
+    <div class="cc">3</div>
+    <div class="cs">24.1</div>
+    <div class="cs">+1.6</div>
+    <div class="ce"><span class="boon">CRIT_UP 15/3t</span> <span class="sep">·</span> <span class="bane">POISON 6/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="16" data-name="Blaze" data-recipe="FIRE x2" data-genes="2" data-pwr="60" data-cd="3" data-raw="23.6162" data-delta="1.1362" data-types="FIRE" data-effects="POISON 10/2t ATK_DOWN 5/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#E24B4A">●</span>&nbsp;Blaze</div>
+    <div class="cr"><span style="color:#E24B4A;font-weight:500">FIRE</span> x2</div>
+    <div class="cg">2</div>
+    <div class="cp">60</div>
+    <div class="cc">3</div>
+    <div class="cs">23.6</div>
+    <div class="cs">+1.1</div>
+    <div class="ce"><span class="bane">POISON 10/2t</span> <span class="sep">·</span> <span class="bane">ATK_DOWN 5/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="17" data-name="Tidal" data-recipe="WATER x2" data-genes="2" data-pwr="60" data-cd="3" data-raw="27.6381" data-delta="5.1581" data-types="WATER" data-effects="REGEN 6%/3t SPD_DOWN 5/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#378ADD">●</span>&nbsp;Tidal</div>
+    <div class="cr"><span style="color:#378ADD;font-weight:500">WATER</span> x2</div>
+    <div class="cg">2</div>
+    <div class="cp">60</div>
+    <div class="cc">3</div>
+    <div class="cs">27.6</div>
+    <div class="cs">+5.2</div>
+    <div class="ce"><span class="boon">REGEN 6%/3t</span> <span class="sep">·</span> <span class="bane">SPD_DOWN 5/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="18" data-name="Tempest" data-recipe="AIR x2" data-genes="2" data-pwr="60" data-cd="2" data-raw="25.8500" data-delta="3.3700" data-types="AIR" data-effects="BLIND 25%/2t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#5DCAA5">●</span>&nbsp;Tempest</div>
+    <div class="cr"><span style="color:#5DCAA5;font-weight:500">AIR</span> x2</div>
+    <div class="cg">2</div>
+    <div class="cp">60</div>
+    <div class="cc">2</div>
+    <div class="cs">25.9</div>
+    <div class="cs">+3.4</div>
+    <div class="ce"><span class="bane">BLIND 25%/2t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="19" data-name="Quake" data-recipe="EARTH x2" data-genes="2" data-pwr="70" data-cd="2" data-raw="40.2000" data-delta="17.7200" data-types="EARTH" data-effects="SHIELD 15%">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#BA7517">●</span>&nbsp;Quake</div>
+    <div class="cr"><span style="color:#BA7517;font-weight:500">EARTH</span> x2</div>
+    <div class="cg">2</div>
+    <div class="cp">70</div>
+    <div class="cc">2</div>
+    <div class="cs">40.2</div>
+    <div class="cs">+17.7</div>
+    <div class="ce"><span class="boon">SHIELD 15%</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="20" data-name="Holy Light" data-recipe="LIGHT x2" data-genes="2" data-pwr="60" data-cd="3" data-raw="38.7000" data-delta="16.2200" data-types="LIGHT" data-effects="HEAL 25% CLEANSE">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#EF9F27">●</span>&nbsp;Holy Light</div>
+    <div class="cr"><span style="color:#EF9F27;font-weight:500">LIGHT</span> x2</div>
+    <div class="cg">2</div>
+    <div class="cp">60</div>
+    <div class="cc">3</div>
+    <div class="cs">38.7</div>
+    <div class="cs">+16.2</div>
+    <div class="ce"><span class="boon">HEAL 25%</span> <span class="sep">·</span> <span class="boon">CLEANSE</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="21" data-name="Dark Curse" data-recipe="DARK x2" data-genes="2" data-pwr="60" data-cd="3" data-raw="30.6694" data-delta="8.1894" data-types="DARK" data-effects="DRAIN 60% HEAL_DOWN 75%/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#7F77DD">●</span>&nbsp;Dark Curse</div>
+    <div class="cr"><span style="color:#7F77DD;font-weight:500">DARK</span> x2</div>
+    <div class="cg">2</div>
+    <div class="cp">60</div>
+    <div class="cc">3</div>
+    <div class="cs">30.7</div>
+    <div class="cs">+8.2</div>
+    <div class="ce"><span class="boon">DRAIN 60%</span> <span class="sep">·</span> <span class="bane">HEAL_DOWN 75%/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="22" data-name="Holy Wrath" data-recipe="LIGHT x3" data-genes="3" data-pwr="90" data-cd="5" data-raw="22.0333" data-delta="-3.5712" data-types="LIGHT" data-effects="CLEANSE PURGE">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#EF9F27">●</span>&nbsp;Holy Wrath</div>
+    <div class="cr"><span style="color:#EF9F27;font-weight:500">LIGHT</span> x3</div>
+    <div class="cg">3</div>
+    <div class="cp">90</div>
+    <div class="cc">5</div>
+    <div class="cs">22.0</div>
+    <div class="cs">-3.6</div>
+    <div class="ce"><span class="boon">CLEANSE</span> <span class="sep">·</span> <span class="bane">PURGE</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="23" data-name="Void Reap" data-recipe="DARK x3" data-genes="3" data-pwr="80" data-cd="5" data-raw="27.8133" data-delta="2.2088" data-types="DARK" data-effects="DRAIN 70% PURGE">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#7F77DD">●</span>&nbsp;Void Reap</div>
+    <div class="cr"><span style="color:#7F77DD;font-weight:500">DARK</span> x3</div>
+    <div class="cg">3</div>
+    <div class="cp">80</div>
+    <div class="cc">5</div>
+    <div class="cs">27.8</div>
+    <div class="cs">+2.2</div>
+    <div class="ce"><span class="boon">DRAIN 70%</span> <span class="sep">·</span> <span class="bane">PURGE</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="24" data-name="Talon Strike" data-recipe="CLAW + WING" data-genes="2" data-pwr="65" data-cd="3" data-raw="21.4414" data-delta="-1.0386" data-types="CLAW WING" data-effects="SPD_UP 7/4t spd+5">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#D85A30">●</span>&nbsp;Talon Strike</div>
+    <div class="cr"><span style="color:#D85A30;font-weight:500">CLAW</span> + <span style="color:#1D9E75;font-weight:500">WING</span></div>
+    <div class="cg">2</div>
+    <div class="cp">65</div>
+    <div class="cc">3</div>
+    <div class="cs">21.4</div>
+    <div class="cs">-1.0</div>
+    <div class="ce"><span class="boon">SPD_UP 7/4t</span> <span class="sep">·</span> <span class="mod">spd+5</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="25" data-name="Ember Claw" data-recipe="CLAW + FIRE" data-genes="2" data-pwr="60" data-cd="3" data-raw="20.1375" data-delta="-2.3425" data-types="CLAW FIRE" data-effects="ATK_DOWN 5/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#D85A30">●</span>&nbsp;Ember Claw</div>
+    <div class="cr"><span style="color:#D85A30;font-weight:500">CLAW</span> + <span style="color:#E24B4A;font-weight:500">FIRE</span></div>
+    <div class="cg">2</div>
+    <div class="cp">60</div>
+    <div class="cc">3</div>
+    <div class="cs">20.1</div>
+    <div class="cs">-2.3</div>
+    <div class="ce"><span class="bane">ATK_DOWN 5/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="26" data-name="Tidal Rake" data-recipe="CLAW + WATER" data-genes="2" data-pwr="55" data-cd="3" data-raw="21.9725" data-delta="-0.5075" data-types="CLAW WATER" data-effects="SPD_DOWN 7/3t HEAL_DOWN 75%/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#D85A30">●</span>&nbsp;Tidal Rake</div>
+    <div class="cr"><span style="color:#D85A30;font-weight:500">CLAW</span> + <span style="color:#378ADD;font-weight:500">WATER</span></div>
+    <div class="cg">2</div>
+    <div class="cp">55</div>
+    <div class="cc">3</div>
+    <div class="cs">22.0</div>
+    <div class="cs">-0.5</div>
+    <div class="ce"><span class="bane">SPD_DOWN 7/3t</span> <span class="sep">·</span> <span class="bane">HEAL_DOWN 75%/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="27" data-name="Gale Slash" data-recipe="CLAW + AIR" data-genes="2" data-pwr="55" data-cd="3" data-raw="19.8600" data-delta="-2.6200" data-types="CLAW AIR" data-effects="BLIND 20%/3t crit+5">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#D85A30">●</span>&nbsp;Gale Slash</div>
+    <div class="cr"><span style="color:#D85A30;font-weight:500">CLAW</span> + <span style="color:#5DCAA5;font-weight:500">AIR</span></div>
+    <div class="cg">2</div>
+    <div class="cp">55</div>
+    <div class="cc">3</div>
+    <div class="cs">19.9</div>
+    <div class="cs">-2.6</div>
+    <div class="ce"><span class="bane">BLIND 20%/3t</span> <span class="sep">·</span> <span class="mod">crit+5</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="28" data-name="Wild Charge" data-recipe="CLAW + EARTH" data-genes="2" data-pwr="65" data-cd="3" data-raw="21.3500" data-delta="-1.1300" data-types="CLAW EARTH" data-effects="CRIT_DOWN 20/1t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#D85A30">●</span>&nbsp;Wild Charge</div>
+    <div class="cr"><span style="color:#D85A30;font-weight:500">CLAW</span> + <span style="color:#BA7517;font-weight:500">EARTH</span></div>
+    <div class="cg">2</div>
+    <div class="cp">65</div>
+    <div class="cc">3</div>
+    <div class="cs">21.4</div>
+    <div class="cs">-1.1</div>
+    <div class="ce"><span class="bane">CRIT_DOWN 20/1t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="29" data-name="Sunder" data-recipe="CLAW + LIGHT" data-genes="2" data-pwr="55" data-cd="4" data-raw="17.7417" data-delta="-4.7383" data-types="CLAW LIGHT" data-effects="DEF_DOWN 8/4t BLIND 25%/2t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#D85A30">●</span>&nbsp;Sunder</div>
+    <div class="cr"><span style="color:#D85A30;font-weight:500">CLAW</span> + <span style="color:#EF9F27;font-weight:500">LIGHT</span></div>
+    <div class="cg">2</div>
+    <div class="cp">55</div>
+    <div class="cc">4</div>
+    <div class="cs">17.7</div>
+    <div class="cs">-4.7</div>
+    <div class="ce"><span class="bane">DEF_DOWN 8/4t</span> <span class="sep">·</span> <span class="bane">BLIND 25%/2t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="30" data-name="Shadow Rend" data-recipe="CLAW + DARK" data-genes="2" data-pwr="65" data-cd="3" data-raw="25.6159" data-delta="3.1359" data-types="CLAW DARK" data-effects="DEF_DOWN 7/4t HEAL_DOWN 75%/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#D85A30">●</span>&nbsp;Shadow Rend</div>
+    <div class="cr"><span style="color:#D85A30;font-weight:500">CLAW</span> + <span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">2</div>
+    <div class="cp">65</div>
+    <div class="cc">3</div>
+    <div class="cs">25.6</div>
+    <div class="cs">+3.1</div>
+    <div class="ce"><span class="bane">DEF_DOWN 7/4t</span> <span class="sep">·</span> <span class="bane">HEAL_DOWN 75%/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="31" data-name="Thorn Shell" data-recipe="SHELL + FANG" data-genes="2" data-pwr="0" data-cd="3" data-raw="7.5990" data-delta="-14.8810" data-types="SHELL FANG" data-effects="THORNS 20/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#999">●</span>&nbsp;Thorn Shell</div>
+    <div class="cr"><span style="color:#888780;font-weight:500">SHELL</span> + <span style="color:#639922;font-weight:500">FANG</span></div>
+    <div class="cg">2</div>
+    <div class="cp">—</div>
+    <div class="cc">3</div>
+    <div class="cs">7.6</div>
+    <div class="cs">-14.9</div>
+    <div class="ce"><span class="boon">THORNS 20/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="32" data-name="Lava Coat" data-recipe="SHELL + FIRE" data-genes="2" data-pwr="0" data-cd="3" data-raw="11.3985" data-delta="-11.0815" data-types="SHELL FIRE" data-effects="DEF_UP 10/4t THORNS 20/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#999">●</span>&nbsp;Lava Coat</div>
+    <div class="cr"><span style="color:#888780;font-weight:500">SHELL</span> + <span style="color:#E24B4A;font-weight:500">FIRE</span></div>
+    <div class="cg">2</div>
+    <div class="cp">—</div>
+    <div class="cc">3</div>
+    <div class="cs">11.4</div>
+    <div class="cs">-11.1</div>
+    <div class="ce"><span class="boon">DEF_UP 10/4t</span> <span class="sep">·</span> <span class="boon">THORNS 20/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="33" data-name="Mend" data-recipe="SHELL + WATER" data-genes="2" data-pwr="0" data-cd="3" data-raw="12.8925" data-delta="-9.5875" data-types="SHELL WATER" data-effects="HEAL 15% DEF_UP 5/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#999">●</span>&nbsp;Mend</div>
+    <div class="cr"><span style="color:#888780;font-weight:500">SHELL</span> + <span style="color:#378ADD;font-weight:500">WATER</span></div>
+    <div class="cg">2</div>
+    <div class="cp">—</div>
+    <div class="cc">3</div>
+    <div class="cs">12.9</div>
+    <div class="cs">-9.6</div>
+    <div class="ce"><span class="boon">HEAL 15%</span> <span class="sep">·</span> <span class="boon">DEF_UP 5/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="34" data-name="Breathe" data-recipe="SHELL + AIR" data-genes="2" data-pwr="0" data-cd="4" data-raw="6.5858" data-delta="-15.8942" data-types="SHELL AIR" data-effects="DEF_UP 10/4t ATK_UP 7/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#999">●</span>&nbsp;Breathe</div>
+    <div class="cr"><span style="color:#888780;font-weight:500">SHELL</span> + <span style="color:#5DCAA5;font-weight:500">AIR</span></div>
+    <div class="cg">2</div>
+    <div class="cp">—</div>
+    <div class="cc">4</div>
+    <div class="cs">6.6</div>
+    <div class="cs">-15.9</div>
+    <div class="ce"><span class="boon">DEF_UP 10/4t</span> <span class="sep">·</span> <span class="boon">ATK_UP 7/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="35" data-name="Iron Shell" data-recipe="SHELL + EARTH" data-genes="2" data-pwr="0" data-cd="4" data-raw="7.0000" data-delta="-15.4800" data-types="SHELL EARTH" data-effects="REFLECT ×1">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#999">●</span>&nbsp;Iron Shell</div>
+    <div class="cr"><span style="color:#888780;font-weight:500">SHELL</span> + <span style="color:#BA7517;font-weight:500">EARTH</span></div>
+    <div class="cg">2</div>
+    <div class="cp">—</div>
+    <div class="cc">4</div>
+    <div class="cs">7.0</div>
+    <div class="cs">-15.5</div>
+    <div class="ce"><span class="boon">REFLECT ×1</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="36" data-name="Holy Ward" data-recipe="SHELL + LIGHT" data-genes="2" data-pwr="0" data-cd="3" data-raw="7.0350" data-delta="-15.4450" data-types="SHELL LIGHT" data-effects="DEF_UP 10/3t CLEANSE">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#999">●</span>&nbsp;Holy Ward</div>
+    <div class="cr"><span style="color:#888780;font-weight:500">SHELL</span> + <span style="color:#EF9F27;font-weight:500">LIGHT</span></div>
+    <div class="cg">2</div>
+    <div class="cp">—</div>
+    <div class="cc">3</div>
+    <div class="cs">7.0</div>
+    <div class="cs">-15.4</div>
+    <div class="ce"><span class="boon">DEF_UP 10/3t</span> <span class="sep">·</span> <span class="boon">CLEANSE</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="37" data-name="Petrify" data-recipe="SHELL + DARK" data-genes="2" data-pwr="40" data-cd="4" data-raw="14.2800" data-delta="-8.2000" data-types="SHELL DARK" data-effects="STUN 1t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#888780">●</span>&nbsp;Petrify</div>
+    <div class="cr"><span style="color:#888780;font-weight:500">SHELL</span> + <span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">2</div>
+    <div class="cp">40</div>
+    <div class="cc">4</div>
+    <div class="cs">14.3</div>
+    <div class="cs">-8.2</div>
+    <div class="ce"><span class="bane">STUN 1t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="38" data-name="Wildfire" data-recipe="WING + FIRE" data-genes="2" data-pwr="60" data-cd="2" data-raw="30.1350" data-delta="7.6550" data-types="WING FIRE" data-effects="SPD_UP 7/3t POISON 6/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#1D9E75">●</span>&nbsp;Wildfire</div>
+    <div class="cr"><span style="color:#1D9E75;font-weight:500">WING</span> + <span style="color:#E24B4A;font-weight:500">FIRE</span></div>
+    <div class="cg">2</div>
+    <div class="cp">60</div>
+    <div class="cc">2</div>
+    <div class="cs">30.1</div>
+    <div class="cs">+7.7</div>
+    <div class="ce"><span class="boon">SPD_UP 7/3t</span> <span class="sep">·</span> <span class="bane">POISON 6/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="39" data-name="Slip Strike" data-recipe="WING + WATER" data-genes="2" data-pwr="50" data-cd="2" data-raw="23.7133" data-delta="1.2333" data-types="WING WATER" data-effects="SPD_UP 5/3t SPD_DOWN 7/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#1D9E75">●</span>&nbsp;Slip Strike</div>
+    <div class="cr"><span style="color:#1D9E75;font-weight:500">WING</span> + <span style="color:#378ADD;font-weight:500">WATER</span></div>
+    <div class="cg">2</div>
+    <div class="cp">50</div>
+    <div class="cc">2</div>
+    <div class="cs">23.7</div>
+    <div class="cs">+1.2</div>
+    <div class="ce"><span class="boon">SPD_UP 5/3t</span> <span class="sep">·</span> <span class="bane">SPD_DOWN 7/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="40" data-name="Veil" data-recipe="WING + AIR" data-genes="2" data-pwr="0" data-cd="4" data-raw="8.0400" data-delta="-14.4400" data-types="WING AIR" data-effects="DODGE ×1 BLIND 20%/2t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#999">●</span>&nbsp;Veil</div>
+    <div class="cr"><span style="color:#1D9E75;font-weight:500">WING</span> + <span style="color:#5DCAA5;font-weight:500">AIR</span></div>
+    <div class="cg">2</div>
+    <div class="cp">—</div>
+    <div class="cc">4</div>
+    <div class="cs">8.0</div>
+    <div class="cs">-14.4</div>
+    <div class="ce"><span class="boon">DODGE ×1</span> <span class="sep">·</span> <span class="bane">BLIND 20%/2t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="41" data-name="Dust Guard" data-recipe="WING + EARTH" data-genes="2" data-pwr="60" data-cd="3" data-raw="32.4000" data-delta="9.9200" data-types="WING EARTH" data-effects="SHIELD 20%">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#1D9E75">●</span>&nbsp;Dust Guard</div>
+    <div class="cr"><span style="color:#1D9E75;font-weight:500">WING</span> + <span style="color:#BA7517;font-weight:500">EARTH</span></div>
+    <div class="cg">2</div>
+    <div class="cp">60</div>
+    <div class="cc">3</div>
+    <div class="cs">32.4</div>
+    <div class="cs">+9.9</div>
+    <div class="ce"><span class="boon">SHIELD 20%</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="42" data-name="Solar Wind" data-recipe="WING + LIGHT" data-genes="2" data-pwr="55" data-cd="3" data-raw="21.2375" data-delta="-1.2425" data-types="WING LIGHT" data-effects="ATK_UP 5/3t BLIND 20%/2t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#1D9E75">●</span>&nbsp;Solar Wind</div>
+    <div class="cr"><span style="color:#1D9E75;font-weight:500">WING</span> + <span style="color:#EF9F27;font-weight:500">LIGHT</span></div>
+    <div class="cg">2</div>
+    <div class="cp">55</div>
+    <div class="cc">3</div>
+    <div class="cs">21.2</div>
+    <div class="cs">-1.2</div>
+    <div class="ce"><span class="boon">ATK_UP 5/3t</span> <span class="sep">·</span> <span class="bane">BLIND 20%/2t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="43" data-name="Shadeslip" data-recipe="WING + DARK" data-genes="2" data-pwr="50" data-cd="3" data-raw="30.7000" data-delta="8.2200" data-types="WING DARK" data-effects="DODGE ×1 DRAIN 60%">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#1D9E75">●</span>&nbsp;Shadeslip</div>
+    <div class="cr"><span style="color:#1D9E75;font-weight:500">WING</span> + <span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">2</div>
+    <div class="cp">50</div>
+    <div class="cc">3</div>
+    <div class="cs">30.7</div>
+    <div class="cs">+8.2</div>
+    <div class="ce"><span class="boon">DODGE ×1</span> <span class="sep">·</span> <span class="boon">DRAIN 60%</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="44" data-name="Reckless Slash" data-recipe="FANG + FIRE" data-genes="2" data-pwr="75" data-cd="3" data-raw="25.6662" data-delta="3.1862" data-types="FANG FIRE" data-effects="POISON 8/4t DEF_DOWN 5/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#639922">●</span>&nbsp;Reckless Slash</div>
+    <div class="cr"><span style="color:#639922;font-weight:500">FANG</span> + <span style="color:#E24B4A;font-weight:500">FIRE</span></div>
+    <div class="cg">2</div>
+    <div class="cp">75</div>
+    <div class="cc">3</div>
+    <div class="cs">25.7</div>
+    <div class="cs">+3.2</div>
+    <div class="ce"><span class="bane">POISON 8/4t</span> <span class="sep">·</span> <span class="self-bane">self DEF_DOWN 5/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="45" data-name="Tidal Fang" data-recipe="FANG + WATER" data-genes="2" data-pwr="55" data-cd="3" data-raw="20.0562" data-delta="-2.4238" data-types="FANG WATER" data-effects="CRIT_UP 10/3t SPD_DOWN 5/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#639922">●</span>&nbsp;Tidal Fang</div>
+    <div class="cr"><span style="color:#639922;font-weight:500">FANG</span> + <span style="color:#378ADD;font-weight:500">WATER</span></div>
+    <div class="cg">2</div>
+    <div class="cp">55</div>
+    <div class="cc">3</div>
+    <div class="cs">20.1</div>
+    <div class="cs">-2.4</div>
+    <div class="ce"><span class="boon">CRIT_UP 10/3t</span> <span class="sep">·</span> <span class="bane">SPD_DOWN 5/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="46" data-name="Skyfang" data-recipe="FANG + AIR" data-genes="2" data-pwr="65" data-cd="3" data-raw="24.1375" data-delta="1.6575" data-types="FANG AIR" data-effects="CRIT_UP 10/3t BLIND 20%/2t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#639922">●</span>&nbsp;Skyfang</div>
+    <div class="cr"><span style="color:#639922;font-weight:500">FANG</span> + <span style="color:#5DCAA5;font-weight:500">AIR</span></div>
+    <div class="cg">2</div>
+    <div class="cp">65</div>
+    <div class="cc">3</div>
+    <div class="cs">24.1</div>
+    <div class="cs">+1.7</div>
+    <div class="ce"><span class="boon">CRIT_UP 10/3t</span> <span class="sep">·</span> <span class="bane">BLIND 20%/2t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="47" data-name="Stone Fang" data-recipe="FANG + EARTH" data-genes="2" data-pwr="60" data-cd="3" data-raw="32.4495" data-delta="9.9695" data-types="FANG EARTH" data-effects="SHIELD 15% POISON 6/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#639922">●</span>&nbsp;Stone Fang</div>
+    <div class="cr"><span style="color:#639922;font-weight:500">FANG</span> + <span style="color:#BA7517;font-weight:500">EARTH</span></div>
+    <div class="cg">2</div>
+    <div class="cp">60</div>
+    <div class="cc">3</div>
+    <div class="cs">32.4</div>
+    <div class="cs">+10.0</div>
+    <div class="ce"><span class="boon">SHIELD 15%</span> <span class="sep">·</span> <span class="bane">POISON 6/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="48" data-name="Halobite" data-recipe="FANG + LIGHT" data-genes="2" data-pwr="60" data-cd="3" data-raw="32.7563" data-delta="10.2763" data-types="FANG LIGHT" data-effects="HEAL 15% CRIT_UP 15/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#639922">●</span>&nbsp;Halobite</div>
+    <div class="cr"><span style="color:#639922;font-weight:500">FANG</span> + <span style="color:#EF9F27;font-weight:500">LIGHT</span></div>
+    <div class="cg">2</div>
+    <div class="cp">60</div>
+    <div class="cc">3</div>
+    <div class="cs">32.8</div>
+    <div class="cs">+10.3</div>
+    <div class="ce"><span class="boon">HEAL 15%</span> <span class="sep">·</span> <span class="boon">CRIT_UP 15/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="49" data-name="Void Fang" data-recipe="FANG + DARK" data-genes="2" data-pwr="55" data-cd="2" data-raw="32.5817" data-delta="10.1017" data-types="FANG DARK" data-effects="CRIT_UP 15/3t POISON 8/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#639922">●</span>&nbsp;Void Fang</div>
+    <div class="cr"><span style="color:#639922;font-weight:500">FANG</span> + <span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">2</div>
+    <div class="cp">55</div>
+    <div class="cc">2</div>
+    <div class="cs">32.6</div>
+    <div class="cs">+10.1</div>
+    <div class="ce"><span class="boon">CRIT_UP 15/3t</span> <span class="sep">·</span> <span class="bane">POISON 8/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="50" data-name="Stomp" data-recipe="FIRE + EARTH" data-genes="2" data-pwr="50" data-cd="3" data-raw="21.2500" data-delta="-1.2300" data-types="FIRE EARTH" data-effects="POISON 10/2t CRIT_DOWN 20/1t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#E24B4A">●</span>&nbsp;Stomp</div>
+    <div class="cr"><span style="color:#E24B4A;font-weight:500">FIRE</span> + <span style="color:#BA7517;font-weight:500">EARTH</span></div>
+    <div class="cg">2</div>
+    <div class="cp">50</div>
+    <div class="cc">3</div>
+    <div class="cs">21.2</div>
+    <div class="cs">-1.2</div>
+    <div class="ce"><span class="bane">POISON 10/2t</span> <span class="sep">·</span> <span class="bane">CRIT_DOWN 20/1t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="51" data-name="Holy Sear" data-recipe="FIRE + LIGHT" data-genes="2" data-pwr="55" data-cd="4" data-raw="18.2000" data-delta="-4.2800" data-types="FIRE LIGHT" data-effects="POISON 10/2t BLIND 20%/2t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#E24B4A">●</span>&nbsp;Holy Sear</div>
+    <div class="cr"><span style="color:#E24B4A;font-weight:500">FIRE</span> + <span style="color:#EF9F27;font-weight:500">LIGHT</span></div>
+    <div class="cg">2</div>
+    <div class="cp">55</div>
+    <div class="cc">4</div>
+    <div class="cs">18.2</div>
+    <div class="cs">-4.3</div>
+    <div class="ce"><span class="bane">POISON 10/2t</span> <span class="sep">·</span> <span class="bane">BLIND 20%/2t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="52" data-name="Hellfire" data-recipe="FIRE + DARK" data-genes="2" data-pwr="65" data-cd="4" data-raw="22.4800" data-delta="0.0000" data-types="FIRE DARK" data-effects="POISON 10/2t PURGE">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#E24B4A">●</span>&nbsp;Hellfire</div>
+    <div class="cr"><span style="color:#E24B4A;font-weight:500">FIRE</span> + <span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">2</div>
+    <div class="cp">65</div>
+    <div class="cc">4</div>
+    <div class="cs">22.5</div>
+    <div class="cs">+0.0</div>
+    <div class="ce"><span class="bane">POISON 10/2t</span> <span class="sep">·</span> <span class="bane">PURGE</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="53" data-name="Mistral" data-recipe="WATER + AIR" data-genes="2" data-pwr="65" data-cd="3" data-raw="30.1000" data-delta="7.6200" data-types="WATER AIR" data-effects="HEAL 15%">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#378ADD">●</span>&nbsp;Mistral</div>
+    <div class="cr"><span style="color:#378ADD;font-weight:500">WATER</span> + <span style="color:#5DCAA5;font-weight:500">AIR</span></div>
+    <div class="cg">2</div>
+    <div class="cp">65</div>
+    <div class="cc">3</div>
+    <div class="cs">30.1</div>
+    <div class="cs">+7.6</div>
+    <div class="ce"><span class="boon">HEAL 15%</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="54" data-name="Blessed Rain" data-recipe="WATER + LIGHT" data-genes="2" data-pwr="0" data-cd="3" data-raw="26.5470" data-delta="4.0670" data-types="WATER LIGHT" data-effects="REGEN 12%/4t CLEANSE">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#999">●</span>&nbsp;Blessed Rain</div>
+    <div class="cr"><span style="color:#378ADD;font-weight:500">WATER</span> + <span style="color:#EF9F27;font-weight:500">LIGHT</span></div>
+    <div class="cg">2</div>
+    <div class="cp">—</div>
+    <div class="cc">3</div>
+    <div class="cs">26.5</div>
+    <div class="cs">+4.1</div>
+    <div class="ce"><span class="boon">REGEN 12%/4t</span> <span class="sep">·</span> <span class="boon">CLEANSE</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="55" data-name="Voidsteal" data-recipe="WATER + DARK" data-genes="2" data-pwr="55" data-cd="3" data-raw="30.5200" data-delta="8.0400" data-types="WATER DARK" data-effects="DRAIN 60% PURGE">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#378ADD">●</span>&nbsp;Voidsteal</div>
+    <div class="cr"><span style="color:#378ADD;font-weight:500">WATER</span> + <span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">2</div>
+    <div class="cp">55</div>
+    <div class="cc">3</div>
+    <div class="cs">30.5</div>
+    <div class="cs">+8.0</div>
+    <div class="ce"><span class="boon">DRAIN 60%</span> <span class="sep">·</span> <span class="bane">PURGE</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="56" data-name="Solar Gust" data-recipe="AIR + LIGHT" data-genes="2" data-pwr="50" data-cd="3" data-raw="20.8453" data-delta="-1.6348" data-types="AIR LIGHT" data-effects="ATK_UP 7/4t BLIND 15%/2t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#5DCAA5">●</span>&nbsp;Solar Gust</div>
+    <div class="cr"><span style="color:#5DCAA5;font-weight:500">AIR</span> + <span style="color:#EF9F27;font-weight:500">LIGHT</span></div>
+    <div class="cg">2</div>
+    <div class="cp">50</div>
+    <div class="cc">3</div>
+    <div class="cs">20.8</div>
+    <div class="cs">-1.6</div>
+    <div class="ce"><span class="boon">ATK_UP 7/4t</span> <span class="sep">·</span> <span class="bane">BLIND 15%/2t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="57" data-name="Shadowgale" data-recipe="AIR + DARK" data-genes="2" data-pwr="0" data-cd="4" data-raw="9.2850" data-delta="-13.1950" data-types="AIR DARK" data-effects="DODGE ×1 BLIND 25%/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#999">●</span>&nbsp;Shadowgale</div>
+    <div class="cr"><span style="color:#5DCAA5;font-weight:500">AIR</span> + <span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">2</div>
+    <div class="cp">—</div>
+    <div class="cc">4</div>
+    <div class="cs">9.3</div>
+    <div class="cs">-13.2</div>
+    <div class="ce"><span class="boon">DODGE ×1</span> <span class="sep">·</span> <span class="bane">BLIND 25%/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="58" data-name="Sanctum" data-recipe="EARTH + LIGHT" data-genes="2" data-pwr="60" data-cd="4" data-raw="25.4700" data-delta="2.9900" data-types="EARTH LIGHT" data-effects="SHIELD 15% BLIND 25%/2t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#BA7517">●</span>&nbsp;Sanctum</div>
+    <div class="cr"><span style="color:#BA7517;font-weight:500">EARTH</span> + <span style="color:#EF9F27;font-weight:500">LIGHT</span></div>
+    <div class="cg">2</div>
+    <div class="cp">60</div>
+    <div class="cc">4</div>
+    <div class="cs">25.5</div>
+    <div class="cs">+3.0</div>
+    <div class="ce"><span class="boon">SHIELD 15%</span> <span class="sep">·</span> <span class="bane">BLIND 25%/2t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="59" data-name="Blight" data-recipe="EARTH + DARK" data-genes="2" data-pwr="55" data-cd="4" data-raw="18.0450" data-delta="-4.4350" data-types="EARTH DARK" data-effects="CRIT_DOWN 20/1t HEAL_DOWN 75%/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#BA7517">●</span>&nbsp;Blight</div>
+    <div class="cr"><span style="color:#BA7517;font-weight:500">EARTH</span> + <span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">2</div>
+    <div class="cp">55</div>
+    <div class="cc">4</div>
+    <div class="cs">18.0</div>
+    <div class="cs">-4.4</div>
+    <div class="ce"><span class="bane">CRIT_DOWN 20/1t</span> <span class="sep">·</span> <span class="bane">HEAL_DOWN 75%/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="60" data-name="Eclipse" data-recipe="LIGHT + DARK" data-genes="2" data-pwr="60" data-cd="4" data-raw="21.4530" data-delta="-1.0270" data-types="LIGHT DARK" data-effects="ATK_UP 5/4t STUN 1t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#EF9F27">●</span>&nbsp;Eclipse</div>
+    <div class="cr"><span style="color:#EF9F27;font-weight:500">LIGHT</span> + <span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">2</div>
+    <div class="cp">60</div>
+    <div class="cc">4</div>
+    <div class="cs">21.5</div>
+    <div class="cs">-1.0</div>
+    <div class="ce"><span class="boon">ATK_UP 5/4t</span> <span class="sep">·</span> <span class="bane">STUN 1t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="61" data-name="Twin Talon" data-recipe="CLAW x2 + WING" data-genes="3" data-pwr="80" data-cd="3" data-raw="28.1800" data-delta="2.5755" data-types="CLAW WING" data-effects="ATK_UP 5/3t DEF_DOWN 5/3t spd+8">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#D85A30">●</span>&nbsp;Twin Talon</div>
+    <div class="cr"><span style="color:#D85A30;font-weight:500">CLAW</span> x2 + <span style="color:#1D9E75;font-weight:500">WING</span></div>
+    <div class="cg">3</div>
+    <div class="cp">80</div>
+    <div class="cc">3</div>
+    <div class="cs">28.2</div>
+    <div class="cs">+2.6</div>
+    <div class="ce"><span class="boon">ATK_UP 5/3t</span> <span class="sep">·</span> <span class="bane">DEF_DOWN 5/3t</span> <span class="sep">·</span> <span class="mod">spd+8</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="62" data-name="Bulwark" data-recipe="SHELL x2 + EARTH" data-genes="3" data-pwr="0" data-cd="5" data-raw="27.0264" data-delta="1.4219" data-types="SHELL EARTH" data-effects="SHIELD 50% DEF_UP 8/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#999">●</span>&nbsp;Bulwark</div>
+    <div class="cr"><span style="color:#888780;font-weight:500">SHELL</span> x2 + <span style="color:#BA7517;font-weight:500">EARTH</span></div>
+    <div class="cg">3</div>
+    <div class="cp">—</div>
+    <div class="cc">5</div>
+    <div class="cs">27.0</div>
+    <div class="cs">+1.4</div>
+    <div class="ce"><span class="boon">SHIELD 50%</span> <span class="sep">·</span> <span class="boon">DEF_UP 8/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="63" data-name="Razor Wind" data-recipe="WING x2 + AIR" data-genes="3" data-pwr="60" data-cd="4" data-raw="22.5480" data-delta="-3.0565" data-types="WING AIR" data-effects="DODGE ×1 BLIND 20%/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#1D9E75">●</span>&nbsp;Razor Wind</div>
+    <div class="cr"><span style="color:#1D9E75;font-weight:500">WING</span> x2 + <span style="color:#5DCAA5;font-weight:500">AIR</span></div>
+    <div class="cg">3</div>
+    <div class="cp">60</div>
+    <div class="cc">4</div>
+    <div class="cs">22.5</div>
+    <div class="cs">-3.1</div>
+    <div class="ce"><span class="boon">DODGE ×1</span> <span class="sep">·</span> <span class="bane">BLIND 20%/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="64" data-name="Night Feast" data-recipe="FANG x2 + DARK" data-genes="3" data-pwr="55" data-cd="3" data-raw="31.4950" data-delta="5.8905" data-types="FANG DARK" data-effects="DRAIN 70% POISON 8/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#639922">●</span>&nbsp;Night Feast</div>
+    <div class="cr"><span style="color:#639922;font-weight:500">FANG</span> x2 + <span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">3</div>
+    <div class="cp">55</div>
+    <div class="cc">3</div>
+    <div class="cs">31.5</div>
+    <div class="cs">+5.9</div>
+    <div class="ce"><span class="boon">DRAIN 70%</span> <span class="sep">·</span> <span class="bane">POISON 8/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="65" data-name="Inferno" data-recipe="FIRE x2 + EARTH" data-genes="3" data-pwr="80" data-cd="3" data-raw="31.4322" data-delta="5.8278" data-types="FIRE EARTH" data-effects="POISON 10/4t DEF_DOWN 5/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#E24B4A">●</span>&nbsp;Inferno</div>
+    <div class="cr"><span style="color:#E24B4A;font-weight:500">FIRE</span> x2 + <span style="color:#BA7517;font-weight:500">EARTH</span></div>
+    <div class="cg">3</div>
+    <div class="cp">80</div>
+    <div class="cc">3</div>
+    <div class="cs">31.4</div>
+    <div class="cs">+5.8</div>
+    <div class="ce"><span class="bane">POISON 10/4t</span> <span class="sep">·</span> <span class="bane">DEF_DOWN 5/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="66" data-name="Wellspring" data-recipe="SHELL + WATER x2" data-genes="3" data-pwr="0" data-cd="5" data-raw="21.8932" data-delta="-3.7112" data-types="SHELL WATER" data-effects="REGEN 15%/5t DEF_UP 5/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#999">●</span>&nbsp;Wellspring</div>
+    <div class="cr"><span style="color:#888780;font-weight:500">SHELL</span> + <span style="color:#378ADD;font-weight:500">WATER</span> x2</div>
+    <div class="cg">3</div>
+    <div class="cp">—</div>
+    <div class="cc">5</div>
+    <div class="cs">21.9</div>
+    <div class="cs">-3.7</div>
+    <div class="ce"><span class="boon">REGEN 15%/5t</span> <span class="sep">·</span> <span class="boon">DEF_UP 5/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="67" data-name="Cyclone" data-recipe="WING + AIR x2" data-genes="3" data-pwr="60" data-cd="3" data-raw="22.1494" data-delta="-3.4551" data-types="WING AIR" data-effects="BLIND 25%/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#1D9E75">●</span>&nbsp;Cyclone</div>
+    <div class="cr"><span style="color:#1D9E75;font-weight:500">WING</span> + <span style="color:#5DCAA5;font-weight:500">AIR</span> x2</div>
+    <div class="cg">3</div>
+    <div class="cp">60</div>
+    <div class="cc">3</div>
+    <div class="cs">22.1</div>
+    <div class="cs">-3.5</div>
+    <div class="ce"><span class="bane">BLIND 25%/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="68" data-name="Stone Lock" data-recipe="FANG + EARTH x2" data-genes="3" data-pwr="75" data-cd="4" data-raw="23.9700" data-delta="-1.6345" data-types="FANG EARTH" data-effects="ATK_DOWN 5/3t CRIT_DOWN 20/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#639922">●</span>&nbsp;Stone Lock</div>
+    <div class="cr"><span style="color:#639922;font-weight:500">FANG</span> + <span style="color:#BA7517;font-weight:500">EARTH</span> x2</div>
+    <div class="cg">3</div>
+    <div class="cp">75</div>
+    <div class="cc">4</div>
+    <div class="cs">24.0</div>
+    <div class="cs">-1.6</div>
+    <div class="ce"><span class="bane">ATK_DOWN 5/3t</span> <span class="sep">·</span> <span class="bane">CRIT_DOWN 20/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="69" data-name="Heavens Edge" data-recipe="CLAW + LIGHT x2" data-genes="3" data-pwr="80" data-cd="3" data-raw="37.1875" data-delta="11.5830" data-types="CLAW LIGHT" data-effects="HEAL 15% ATK_UP 5/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#D85A30">●</span>&nbsp;Heavens Edge</div>
+    <div class="cr"><span style="color:#D85A30;font-weight:500">CLAW</span> + <span style="color:#EF9F27;font-weight:500">LIGHT</span> x2</div>
+    <div class="cg">3</div>
+    <div class="cp">80</div>
+    <div class="cc">3</div>
+    <div class="cs">37.2</div>
+    <div class="cs">+11.6</div>
+    <div class="ce"><span class="boon">HEAL 15%</span> <span class="sep">·</span> <span class="boon">ATK_UP 5/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="70" data-name="Sacred Tide" data-recipe="WATER + LIGHT x2" data-genes="3" data-pwr="0" data-cd="4" data-raw="43.7970" data-delta="18.1925" data-types="WATER LIGHT" data-effects="HEAL 35% REGEN 15%/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#999">●</span>&nbsp;Sacred Tide</div>
+    <div class="cr"><span style="color:#378ADD;font-weight:500">WATER</span> + <span style="color:#EF9F27;font-weight:500">LIGHT</span> x2</div>
+    <div class="cg">3</div>
+    <div class="cp">—</div>
+    <div class="cc">4</div>
+    <div class="cs">43.8</div>
+    <div class="cs">+18.2</div>
+    <div class="ce"><span class="boon">HEAL 35%</span> <span class="sep">·</span> <span class="boon">REGEN 15%/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="71" data-name="Solar Burst" data-recipe="FIRE + LIGHT x2" data-genes="3" data-pwr="70" data-cd="4" data-raw="22.1830" data-delta="-3.4215" data-types="FIRE LIGHT" data-effects="POISON 15/2t BLIND 20%/3t BLIND 25%/2t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#E24B4A">●</span>&nbsp;Solar Burst</div>
+    <div class="cr"><span style="color:#E24B4A;font-weight:500">FIRE</span> + <span style="color:#EF9F27;font-weight:500">LIGHT</span> x2</div>
+    <div class="cg">3</div>
+    <div class="cp">70</div>
+    <div class="cc">4</div>
+    <div class="cs">22.2</div>
+    <div class="cs">-3.4</div>
+    <div class="ce"><span class="bane">POISON 15/2t</span> <span class="sep">·</span> <span class="bane">BLIND 20%/3t</span> <span class="sep">·</span> <span class="self-bane">self BLIND 25%/2t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="72" data-name="Abyssal Rend" data-recipe="CLAW + DARK x2" data-genes="3" data-pwr="70" data-cd="3" data-raw="35.1397" data-delta="9.5352" data-types="CLAW DARK" data-effects="DRAIN 60% DEF_DOWN 7/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#D85A30">●</span>&nbsp;Abyssal Rend</div>
+    <div class="cr"><span style="color:#D85A30;font-weight:500">CLAW</span> + <span style="color:#7F77DD;font-weight:500">DARK</span> x2</div>
+    <div class="cg">3</div>
+    <div class="cp">70</div>
+    <div class="cc">3</div>
+    <div class="cs">35.1</div>
+    <div class="cs">+9.5</div>
+    <div class="ce"><span class="boon">DRAIN 60%</span> <span class="sep">·</span> <span class="bane">DEF_DOWN 7/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="73" data-name="Feral Void" data-recipe="FANG + DARK x2" data-genes="3" data-pwr="60" data-cd="3" data-raw="28.4819" data-delta="2.8774" data-types="FANG DARK" data-effects="CRIT_UP 15/4t POISON 10/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#639922">●</span>&nbsp;Feral Void</div>
+    <div class="cr"><span style="color:#639922;font-weight:500">FANG</span> + <span style="color:#7F77DD;font-weight:500">DARK</span> x2</div>
+    <div class="cg">3</div>
+    <div class="cp">60</div>
+    <div class="cc">3</div>
+    <div class="cs">28.5</div>
+    <div class="cs">+2.9</div>
+    <div class="ce"><span class="boon">CRIT_UP 15/4t</span> <span class="sep">·</span> <span class="bane">POISON 10/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="74" data-name="Void Nova" data-recipe="EARTH + DARK x2" data-genes="3" data-pwr="80" data-cd="4" data-raw="27.8400" data-delta="2.2355" data-types="EARTH DARK" data-effects="DRAIN 50%">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#BA7517">●</span>&nbsp;Void Nova</div>
+    <div class="cr"><span style="color:#BA7517;font-weight:500">EARTH</span> + <span style="color:#7F77DD;font-weight:500">DARK</span> x2</div>
+    <div class="cg">3</div>
+    <div class="cp">80</div>
+    <div class="cc">4</div>
+    <div class="cs">27.8</div>
+    <div class="cs">+2.2</div>
+    <div class="ce"><span class="boon">DRAIN 50%</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="75" data-name="Apex Triad" data-recipe="CLAW + WING + FANG" data-genes="3" data-pwr="85" data-cd="4" data-raw="24.6256" data-delta="-0.9789" data-types="CLAW WING FANG" data-effects="ATK_UP 7/3t DEF_DOWN 7/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#D85A30">●</span>&nbsp;Apex Triad</div>
+    <div class="cr"><span style="color:#D85A30;font-weight:500">CLAW</span> + <span style="color:#1D9E75;font-weight:500">WING</span> + <span style="color:#639922;font-weight:500">FANG</span></div>
+    <div class="cg">3</div>
+    <div class="cp">85</div>
+    <div class="cc">4</div>
+    <div class="cs">24.6</div>
+    <div class="cs">-1.0</div>
+    <div class="ce"><span class="boon">ATK_UP 7/3t</span> <span class="sep">·</span> <span class="bane">DEF_DOWN 7/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="76" data-name="Stampede" data-recipe="CLAW + SHELL + EARTH" data-genes="3" data-pwr="85" data-cd="4" data-raw="22.1517" data-delta="-3.4528" data-types="CLAW SHELL EARTH" data-effects="DEF_DOWN 8/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#D85A30">●</span>&nbsp;Stampede</div>
+    <div class="cr"><span style="color:#D85A30;font-weight:500">CLAW</span> + <span style="color:#888780;font-weight:500">SHELL</span> + <span style="color:#BA7517;font-weight:500">EARTH</span></div>
+    <div class="cg">3</div>
+    <div class="cp">85</div>
+    <div class="cc">4</div>
+    <div class="cs">22.2</div>
+    <div class="cs">-3.5</div>
+    <div class="ce"><span class="bane">DEF_DOWN 8/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="77" data-name="Fortress" data-recipe="SHELL + WING + EARTH" data-genes="3" data-pwr="0" data-cd="5" data-raw="12.5330" data-delta="-13.0715" data-types="SHELL WING EARTH" data-effects="DEF_UP 10/4t SHIELD 20%">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#999">●</span>&nbsp;Fortress</div>
+    <div class="cr"><span style="color:#888780;font-weight:500">SHELL</span> + <span style="color:#1D9E75;font-weight:500">WING</span> + <span style="color:#BA7517;font-weight:500">EARTH</span></div>
+    <div class="cg">3</div>
+    <div class="cp">—</div>
+    <div class="cc">5</div>
+    <div class="cs">12.5</div>
+    <div class="cs">-13.1</div>
+    <div class="ce"><span class="boon">DEF_UP 10/4t</span> <span class="sep">·</span> <span class="boon">SHIELD 20%</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="78" data-name="Parry" data-recipe="SHELL + FANG + EARTH" data-genes="3" data-pwr="0" data-cd="4" data-raw="12.0660" data-delta="-13.5385" data-types="SHELL FANG EARTH" data-effects="REFLECT ×1 CRIT_UP 20/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#999">●</span>&nbsp;Parry</div>
+    <div class="cr"><span style="color:#888780;font-weight:500">SHELL</span> + <span style="color:#639922;font-weight:500">FANG</span> + <span style="color:#BA7517;font-weight:500">EARTH</span></div>
+    <div class="cg">3</div>
+    <div class="cp">—</div>
+    <div class="cc">4</div>
+    <div class="cs">12.1</div>
+    <div class="cs">-13.5</div>
+    <div class="ce"><span class="boon">REFLECT ×1</span> <span class="sep">·</span> <span class="boon">CRIT_UP 20/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="79" data-name="Razor Sprint" data-recipe="CLAW + WING + AIR" data-genes="3" data-pwr="70" data-cd="3" data-raw="26.1160" data-delta="0.5115" data-types="CLAW WING AIR" data-effects="SPD_UP 10/4t DEF_DOWN 5/4t spd+10">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#D85A30">●</span>&nbsp;Razor Sprint</div>
+    <div class="cr"><span style="color:#D85A30;font-weight:500">CLAW</span> + <span style="color:#1D9E75;font-weight:500">WING</span> + <span style="color:#5DCAA5;font-weight:500">AIR</span></div>
+    <div class="cg">3</div>
+    <div class="cp">70</div>
+    <div class="cc">3</div>
+    <div class="cs">26.1</div>
+    <div class="cs">+0.5</div>
+    <div class="ce"><span class="boon">SPD_UP 10/4t</span> <span class="sep">·</span> <span class="bane">DEF_DOWN 5/4t</span> <span class="sep">·</span> <span class="mod">spd+10</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="80" data-name="Hawkstrike" data-recipe="WING + FANG + AIR" data-genes="3" data-pwr="70" data-cd="3" data-raw="31.9062" data-delta="6.3018" data-types="WING FANG AIR" data-effects="DODGE ×1 CRIT_UP 15/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#1D9E75">●</span>&nbsp;Hawkstrike</div>
+    <div class="cr"><span style="color:#1D9E75;font-weight:500">WING</span> + <span style="color:#639922;font-weight:500">FANG</span> + <span style="color:#5DCAA5;font-weight:500">AIR</span></div>
+    <div class="cg">3</div>
+    <div class="cp">70</div>
+    <div class="cc">3</div>
+    <div class="cs">31.9</div>
+    <div class="cs">+6.3</div>
+    <div class="ce"><span class="boon">DODGE ×1</span> <span class="sep">·</span> <span class="boon">CRIT_UP 15/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="81" data-name="Blood Curse" data-recipe="CLAW + FANG + DARK" data-genes="3" data-pwr="80" data-cd="4" data-raw="23.3220" data-delta="-2.2825" data-types="CLAW FANG DARK" data-effects="POISON 15/4t POISON 8/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#D85A30">●</span>&nbsp;Blood Curse</div>
+    <div class="cr"><span style="color:#D85A30;font-weight:500">CLAW</span> + <span style="color:#639922;font-weight:500">FANG</span> + <span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">3</div>
+    <div class="cp">80</div>
+    <div class="cc">4</div>
+    <div class="cs">23.3</div>
+    <div class="cs">-2.3</div>
+    <div class="ce"><span class="bane">POISON 15/4t</span> <span class="sep">·</span> <span class="self-bane">self POISON 8/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="82" data-name="Venom Drain" data-recipe="FANG + WATER + DARK" data-genes="3" data-pwr="60" data-cd="3" data-raw="32.3175" data-delta="6.7130" data-types="FANG WATER DARK" data-effects="DRAIN 70% SPD_DOWN 10/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#639922">●</span>&nbsp;Venom Drain</div>
+    <div class="cr"><span style="color:#639922;font-weight:500">FANG</span> + <span style="color:#378ADD;font-weight:500">WATER</span> + <span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">3</div>
+    <div class="cp">60</div>
+    <div class="cc">3</div>
+    <div class="cs">32.3</div>
+    <div class="cs">+6.7</div>
+    <div class="ce"><span class="boon">DRAIN 70%</span> <span class="sep">·</span> <span class="bane">SPD_DOWN 10/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="83" data-name="Firestorm" data-recipe="WING + FIRE + AIR" data-genes="3" data-pwr="80" data-cd="4" data-raw="23.6260" data-delta="-1.9785" data-types="WING FIRE AIR" data-effects="SPD_UP 10/4t ATK_DOWN 5/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#1D9E75">●</span>&nbsp;Firestorm</div>
+    <div class="cr"><span style="color:#1D9E75;font-weight:500">WING</span> + <span style="color:#E24B4A;font-weight:500">FIRE</span> + <span style="color:#5DCAA5;font-weight:500">AIR</span></div>
+    <div class="cg">3</div>
+    <div class="cp">80</div>
+    <div class="cc">4</div>
+    <div class="cs">23.6</div>
+    <div class="cs">-2.0</div>
+    <div class="ce"><span class="boon">SPD_UP 10/4t</span> <span class="sep">·</span> <span class="bane">ATK_DOWN 5/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="84" data-name="Magma Reap" data-recipe="FIRE + EARTH + DARK" data-genes="3" data-pwr="75" data-cd="4" data-raw="31.8928" data-delta="6.2883" data-types="FIRE EARTH DARK" data-effects="DRAIN 60% POISON 8/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#E24B4A">●</span>&nbsp;Magma Reap</div>
+    <div class="cr"><span style="color:#E24B4A;font-weight:500">FIRE</span> + <span style="color:#BA7517;font-weight:500">EARTH</span> + <span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">3</div>
+    <div class="cp">75</div>
+    <div class="cc">4</div>
+    <div class="cs">31.9</div>
+    <div class="cs">+6.3</div>
+    <div class="ce"><span class="boon">DRAIN 60%</span> <span class="sep">·</span> <span class="bane">POISON 8/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="85" data-name="Aqua Mantle" data-recipe="SHELL + WATER + AIR" data-genes="3" data-pwr="0" data-cd="4" data-raw="28.1400" data-delta="2.5355" data-types="SHELL WATER AIR" data-effects="SHIELD 25% REGEN 10%/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#999">●</span>&nbsp;Aqua Mantle</div>
+    <div class="cr"><span style="color:#888780;font-weight:500">SHELL</span> + <span style="color:#378ADD;font-weight:500">WATER</span> + <span style="color:#5DCAA5;font-weight:500">AIR</span></div>
+    <div class="cg">3</div>
+    <div class="cp">—</div>
+    <div class="cc">4</div>
+    <div class="cs">28.1</div>
+    <div class="cs">+2.5</div>
+    <div class="ce"><span class="boon">SHIELD 25%</span> <span class="sep">·</span> <span class="boon">REGEN 10%/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="86" data-name="Spring Renewal" data-recipe="SHELL + WATER + LIGHT" data-genes="3" data-pwr="0" data-cd="5" data-raw="28.2982" data-delta="2.6938" data-types="SHELL WATER LIGHT" data-effects="REGEN 15%/5t HEAL 15%">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#999">●</span>&nbsp;Spring Renewal</div>
+    <div class="cr"><span style="color:#888780;font-weight:500">SHELL</span> + <span style="color:#378ADD;font-weight:500">WATER</span> + <span style="color:#EF9F27;font-weight:500">LIGHT</span></div>
+    <div class="cg">3</div>
+    <div class="cp">—</div>
+    <div class="cc">5</div>
+    <div class="cs">28.3</div>
+    <div class="cs">+2.7</div>
+    <div class="ce"><span class="boon">REGEN 15%/5t</span> <span class="sep">·</span> <span class="boon">HEAL 15%</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="87" data-name="Steam Jet" data-recipe="FIRE + WATER + AIR" data-genes="3" data-pwr="65" data-cd="4" data-raw="18.8795" data-delta="-6.7250" data-types="FIRE WATER AIR" data-effects="BLIND 25%/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#E24B4A">●</span>&nbsp;Steam Jet</div>
+    <div class="cr"><span style="color:#E24B4A;font-weight:500">FIRE</span> + <span style="color:#378ADD;font-weight:500">WATER</span> + <span style="color:#5DCAA5;font-weight:500">AIR</span></div>
+    <div class="cg">3</div>
+    <div class="cp">65</div>
+    <div class="cc">4</div>
+    <div class="cs">18.9</div>
+    <div class="cs">-6.7</div>
+    <div class="ce"><span class="bane">BLIND 25%/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="88" data-name="Dust Devil" data-recipe="WING + AIR + EARTH" data-genes="3" data-pwr="70" data-cd="4" data-raw="18.7730" data-delta="-6.8315" data-types="WING AIR EARTH" data-effects="SPD_DOWN 10/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#1D9E75">●</span>&nbsp;Dust Devil</div>
+    <div class="cr"><span style="color:#1D9E75;font-weight:500">WING</span> + <span style="color:#5DCAA5;font-weight:500">AIR</span> + <span style="color:#BA7517;font-weight:500">EARTH</span></div>
+    <div class="cg">3</div>
+    <div class="cp">70</div>
+    <div class="cc">4</div>
+    <div class="cs">18.8</div>
+    <div class="cs">-6.8</div>
+    <div class="ce"><span class="bane">SPD_DOWN 10/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="89" data-name="Null Crash" data-recipe="CLAW + EARTH + LIGHT" data-genes="3" data-pwr="85" data-cd="4" data-raw="22.1517" data-delta="-3.4528" data-types="CLAW EARTH LIGHT" data-effects="DEF_DOWN 8/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#D85A30">●</span>&nbsp;Null Crash</div>
+    <div class="cr"><span style="color:#D85A30;font-weight:500">CLAW</span> + <span style="color:#BA7517;font-weight:500">EARTH</span> + <span style="color:#EF9F27;font-weight:500">LIGHT</span></div>
+    <div class="cg">3</div>
+    <div class="cp">85</div>
+    <div class="cc">4</div>
+    <div class="cs">22.2</div>
+    <div class="cs">-3.5</div>
+    <div class="ce"><span class="bane">DEF_DOWN 8/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="90" data-name="Magma Surge" data-recipe="FIRE + WATER + EARTH" data-genes="3" data-pwr="80" data-cd="4" data-raw="25.0930" data-delta="-0.5115" data-types="FIRE WATER EARTH" data-effects="PURGE SPD_DOWN 10/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#E24B4A">●</span>&nbsp;Magma Surge</div>
+    <div class="cr"><span style="color:#E24B4A;font-weight:500">FIRE</span> + <span style="color:#378ADD;font-weight:500">WATER</span> + <span style="color:#BA7517;font-weight:500">EARTH</span></div>
+    <div class="cg">3</div>
+    <div class="cp">80</div>
+    <div class="cc">4</div>
+    <div class="cs">25.1</div>
+    <div class="cs">-0.5</div>
+    <div class="ce"><span class="bane">PURGE</span> <span class="sep">·</span> <span class="bane">SPD_DOWN 10/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="91" data-name="Eclipse Blade" data-recipe="CLAW + LIGHT + DARK" data-genes="3" data-pwr="85" data-cd="4" data-raw="26.6979" data-delta="1.0934" data-types="CLAW LIGHT DARK" data-effects="ATK_UP 7/4t DEF_DOWN 8/4t crit+10">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#D85A30">●</span>&nbsp;Eclipse Blade</div>
+    <div class="cr"><span style="color:#D85A30;font-weight:500">CLAW</span> + <span style="color:#EF9F27;font-weight:500">LIGHT</span> + <span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">3</div>
+    <div class="cp">85</div>
+    <div class="cc">4</div>
+    <div class="cs">26.7</div>
+    <div class="cs">+1.1</div>
+    <div class="ce"><span class="boon">ATK_UP 7/4t</span> <span class="sep">·</span> <span class="bane">DEF_DOWN 8/4t</span> <span class="sep">·</span> <span class="mod">crit+10</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="92" data-name="Twilight Ward" data-recipe="SHELL + LIGHT + DARK" data-genes="3" data-pwr="80" data-cd="5" data-raw="23.8550" data-delta="-1.7495" data-types="SHELL LIGHT DARK" data-effects="ATK_UP 10/4t STUN 1t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#888780">●</span>&nbsp;Twilight Ward</div>
+    <div class="cr"><span style="color:#888780;font-weight:500">SHELL</span> + <span style="color:#EF9F27;font-weight:500">LIGHT</span> + <span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">3</div>
+    <div class="cp">80</div>
+    <div class="cc">5</div>
+    <div class="cs">23.9</div>
+    <div class="cs">-1.7</div>
+    <div class="ce"><span class="boon">ATK_UP 10/4t</span> <span class="sep">·</span> <span class="bane">STUN 1t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="93" data-name="Solar Mist" data-recipe="WATER + AIR + LIGHT" data-genes="3" data-pwr="65" data-cd="4" data-raw="29.7080" data-delta="4.1035" data-types="WATER AIR LIGHT" data-effects="HEAL 20% BLIND 20%/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#378ADD">●</span>&nbsp;Solar Mist</div>
+    <div class="cr"><span style="color:#378ADD;font-weight:500">WATER</span> + <span style="color:#5DCAA5;font-weight:500">AIR</span> + <span style="color:#EF9F27;font-weight:500">LIGHT</span></div>
+    <div class="cg">3</div>
+    <div class="cp">65</div>
+    <div class="cc">4</div>
+    <div class="cs">29.7</div>
+    <div class="cs">+4.1</div>
+    <div class="ce"><span class="boon">HEAL 20%</span> <span class="sep">·</span> <span class="bane">BLIND 20%/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="94" data-name="Sanctum Stone" data-recipe="FANG + EARTH + LIGHT" data-genes="3" data-pwr="70" data-cd="4" data-raw="23.7994" data-delta="-1.8051" data-types="FANG EARTH LIGHT" data-effects="THORNS 15/4t CLEANSE">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#639922">●</span>&nbsp;Sanctum Stone</div>
+    <div class="cr"><span style="color:#639922;font-weight:500">FANG</span> + <span style="color:#BA7517;font-weight:500">EARTH</span> + <span style="color:#EF9F27;font-weight:500">LIGHT</span></div>
+    <div class="cg">3</div>
+    <div class="cp">70</div>
+    <div class="cc">4</div>
+    <div class="cs">23.8</div>
+    <div class="cs">-1.8</div>
+    <div class="ce"><span class="boon">THORNS 15/4t</span> <span class="sep">·</span> <span class="boon">CLEANSE</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="95" data-name="Death March" data-recipe="FANG + EARTH + DARK" data-genes="3" data-pwr="80" data-cd="4" data-raw="19.9186" data-delta="-5.6859" data-types="FANG EARTH DARK" data-effects="DEF_DOWN 8/4t SPD_DOWN 7/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#639922">●</span>&nbsp;Death March</div>
+    <div class="cr"><span style="color:#639922;font-weight:500">FANG</span> + <span style="color:#BA7517;font-weight:500">EARTH</span> + <span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">3</div>
+    <div class="cp">80</div>
+    <div class="cc">4</div>
+    <div class="cs">19.9</div>
+    <div class="cs">-5.7</div>
+    <div class="ce"><span class="bane">DEF_DOWN 8/4t</span> <span class="sep">·</span> <span class="self-bane">self SPD_DOWN 7/3t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="96" data-name="Brimstone Wing" data-recipe="WING + FIRE + DARK" data-genes="3" data-pwr="75" data-cd="4" data-raw="26.5000" data-delta="0.8955" data-types="WING FIRE DARK" data-effects="POISON 15/2t PURGE">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#1D9E75">●</span>&nbsp;Brimstone Wing</div>
+    <div class="cr"><span style="color:#1D9E75;font-weight:500">WING</span> + <span style="color:#E24B4A;font-weight:500">FIRE</span> + <span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">3</div>
+    <div class="cp">75</div>
+    <div class="cc">4</div>
+    <div class="cs">26.5</div>
+    <div class="cs">+0.9</div>
+    <div class="ce"><span class="bane">POISON 15/2t</span> <span class="sep">·</span> <span class="bane">PURGE</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="97" data-name="Voidpool" data-recipe="WATER + EARTH + DARK" data-genes="3" data-pwr="70" data-cd="4" data-raw="29.3811" data-delta="3.7766" data-types="WATER EARTH DARK" data-effects="DRAIN 70% SPD_DOWN 7/4t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#378ADD">●</span>&nbsp;Voidpool</div>
+    <div class="cr"><span style="color:#378ADD;font-weight:500">WATER</span> + <span style="color:#BA7517;font-weight:500">EARTH</span> + <span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">3</div>
+    <div class="cp">70</div>
+    <div class="cc">4</div>
+    <div class="cs">29.4</div>
+    <div class="cs">+3.8</div>
+    <div class="ce"><span class="boon">DRAIN 70%</span> <span class="sep">·</span> <span class="bane">SPD_DOWN 7/4t</span></div>
+    <div class="ld"></div>
+  </div>
+  <div class="row grid" data-idx="98" data-name="Shadow Aegis" data-recipe="AIR + EARTH + DARK" data-genes="3" data-pwr="0" data-cd="4" data-raw="18.2850" data-delta="-7.3195" data-types="AIR EARTH DARK" data-effects="SHIELD 25% BLIND 25%/3t">
+    <div class="cn"><span class="tri">&#9656;</span>&nbsp;<span class="dot" style="color:#999">●</span>&nbsp;Shadow Aegis</div>
+    <div class="cr"><span style="color:#5DCAA5;font-weight:500">AIR</span> + <span style="color:#BA7517;font-weight:500">EARTH</span> + <span style="color:#7F77DD;font-weight:500">DARK</span></div>
+    <div class="cg">3</div>
+    <div class="cp">—</div>
+    <div class="cc">4</div>
+    <div class="cs">18.3</div>
+    <div class="cs">-7.3</div>
+    <div class="ce"><span class="boon">SHIELD 25%</span> <span class="sep">·</span> <span class="bane">BLIND 25%/3t</span></div>
+    <div class="ld"></div>
+  </div>
+</div>
+
+<p class="count" id="count"></p>
+
+<!-- Ability data used by ability_format.js. Single source of truth: the JSON. -->
+<script>
+const ABILITIES = [{"idx": 0, "define": "ABILITY_UNKNOWN", "name": "???", "recipe_str": "any unrecognized", "recipe_genes": [], "power": 30, "accuracy": 90, "cooldown": 0, "dmg_types": ["NONE", "NONE"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "IMPACT", "anim_color": "WHITE"}, {"idx": 1, "define": "ABILITY_BASH", "name": "Bash", "recipe_str": "built-in", "recipe_genes": [], "power": 40, "accuracy": 100, "cooldown": 0, "dmg_types": ["NONE", "NONE"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "IMPACT", "anim_color": "WHITE"}, {"idx": 2, "define": "ABILITY_SCRATCH", "name": "Scratch", "recipe_str": "CLAW", "recipe_genes": ["CLAW"], "power": 50, "accuracy": 95, "cooldown": 0, "dmg_types": ["CLAW", "NONE"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "ORANGE"}, {"idx": 3, "define": "ABILITY_HARDEN", "name": "Harden", "recipe_str": "SHELL", "recipe_genes": ["SHELL"], "power": 40, "accuracy": 100, "cooldown": 1, "dmg_types": ["SHELL", "NONE"], "boon": "DEF_UP", "boon_val": 8, "boon_turns": 3, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "IMPACT", "anim_color": "GRAY"}, {"idx": 4, "define": "ABILITY_GUST", "name": "Gust", "recipe_str": "WING", "recipe_genes": ["WING"], "power": 50, "accuracy": 100, "cooldown": 1, "dmg_types": ["WING", "NONE"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "PROJECTILE", "anim_color": "CYAN"}, {"idx": 5, "define": "ABILITY_BITE", "name": "Bite", "recipe_str": "FANG", "recipe_genes": ["FANG"], "power": 45, "accuracy": 95, "cooldown": 1, "dmg_types": ["FANG", "NONE"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "POISON", "bane_val": 4, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "GREEN"}, {"idx": 6, "define": "ABILITY_SCORCH", "name": "Scorch", "recipe_str": "FIRE", "recipe_genes": ["FIRE"], "power": 40, "accuracy": 95, "cooldown": 1, "dmg_types": ["FIRE", "NONE"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "POISON", "bane_val": 6, "bane_turns": 2, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "EXPLOSION", "anim_color": "RED"}, {"idx": 7, "define": "ABILITY_SURGE", "name": "Surge", "recipe_str": "WATER", "recipe_genes": ["WATER"], "power": 40, "accuracy": 100, "cooldown": 1, "dmg_types": ["WATER", "NONE"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "SPD_DOWN", "bane_val": 5, "bane_turns": 3, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "PROJECTILE", "anim_color": "BLUE"}, {"idx": 8, "define": "ABILITY_GALE", "name": "Gale", "recipe_str": "AIR", "recipe_genes": ["AIR"], "power": 40, "accuracy": 100, "cooldown": 1, "dmg_types": ["AIR", "NONE"], "boon": "ATK_UP", "boon_val": 3, "boon_turns": 2, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "PROJECTILE", "anim_color": "CYAN"}, {"idx": 9, "define": "ABILITY_TREMOR", "name": "Tremor", "recipe_str": "EARTH", "recipe_genes": ["EARTH"], "power": 55, "accuracy": 90, "cooldown": 1, "dmg_types": ["EARTH", "NONE"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "CRIT_DOWN", "bane_val": 10, "bane_turns": 1, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "IMPACT", "anim_color": "BROWN"}, {"idx": 10, "define": "ABILITY_RADIANCE", "name": "Radiance", "recipe_str": "LIGHT", "recipe_genes": ["LIGHT"], "power": 45, "accuracy": 95, "cooldown": 2, "dmg_types": ["LIGHT", "NONE"], "boon": "CLEANSE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "BEAM", "anim_color": "YELLOW"}, {"idx": 11, "define": "ABILITY_DRAIN", "name": "Drain", "recipe_str": "DARK", "recipe_genes": ["DARK"], "power": 40, "accuracy": 90, "cooldown": 1, "dmg_types": ["DARK", "NONE"], "boon": "DRAIN", "boon_val": 50, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "DRAIN", "anim_color": "PURPLE"}, {"idx": 12, "define": "ABILITY_TWIN_SLASH", "name": "Twin Slash", "recipe_str": "CLAW x2", "recipe_genes": ["CLAW", "CLAW"], "power": 70, "accuracy": 95, "cooldown": 2, "dmg_types": ["CLAW", "NONE"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "DEF_DOWN", "bane_val": 5, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "ORANGE"}, {"idx": 13, "define": "ABILITY_SHELL_BASH", "name": "Shell Bash", "recipe_str": "SHELL x2", "recipe_genes": ["SHELL", "SHELL"], "power": 60, "accuracy": 95, "cooldown": 3, "dmg_types": ["SHELL", "NONE"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "STUN", "bane_val": 0, "bane_turns": 1, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "IMPACT", "anim_color": "GRAY"}, {"idx": 14, "define": "ABILITY_WIND_SLASH", "name": "Wind Slash", "recipe_str": "WING x2", "recipe_genes": ["WING", "WING"], "power": 60, "accuracy": 95, "cooldown": 2, "dmg_types": ["WING", "NONE"], "boon": "SPD_UP", "boon_val": 5, "boon_turns": 3, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "CYAN"}, {"idx": 15, "define": "ABILITY_TWIN_FANG", "name": "Twin Fang", "recipe_str": "FANG x2", "recipe_genes": ["FANG", "FANG"], "power": 60, "accuracy": 90, "cooldown": 3, "dmg_types": ["FANG", "NONE"], "boon": "CRIT_UP", "boon_val": 15, "boon_turns": 3, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "POISON", "bane_val": 6, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "GREEN"}, {"idx": 16, "define": "ABILITY_BLAZE", "name": "Blaze", "recipe_str": "FIRE x2", "recipe_genes": ["FIRE", "FIRE"], "power": 60, "accuracy": 95, "cooldown": 3, "dmg_types": ["FIRE", "NONE"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "POISON", "bane_val": 10, "bane_turns": 2, "bane2": "ATK_DOWN", "bane2_val": 5, "bane2_turns": 4, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "EXPLOSION", "anim_color": "ORANGE"}, {"idx": 17, "define": "ABILITY_TIDAL", "name": "Tidal", "recipe_str": "WATER x2", "recipe_genes": ["WATER", "WATER"], "power": 60, "accuracy": 95, "cooldown": 3, "dmg_types": ["WATER", "NONE"], "boon": "REGEN", "boon_val": 6, "boon_turns": 3, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "SPD_DOWN", "bane_val": 5, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "EXPLOSION", "anim_color": "BLUE"}, {"idx": 18, "define": "ABILITY_TEMPEST", "name": "Tempest", "recipe_str": "AIR x2", "recipe_genes": ["AIR", "AIR"], "power": 60, "accuracy": 95, "cooldown": 2, "dmg_types": ["AIR", "NONE"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "BLIND", "bane_val": 25, "bane_turns": 2, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "EXPLOSION", "anim_color": "CYAN"}, {"idx": 19, "define": "ABILITY_QUAKE", "name": "Quake", "recipe_str": "EARTH x2", "recipe_genes": ["EARTH", "EARTH"], "power": 70, "accuracy": 90, "cooldown": 2, "dmg_types": ["EARTH", "NONE"], "boon": "SHIELD", "boon_val": 15, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "IMPACT", "anim_color": "BROWN"}, {"idx": 20, "define": "ABILITY_HOLYLIGHT", "name": "Holy Light", "recipe_str": "LIGHT x2", "recipe_genes": ["LIGHT", "LIGHT"], "power": 60, "accuracy": 90, "cooldown": 3, "dmg_types": ["LIGHT", "NONE"], "boon": "HEAL", "boon_val": 25, "boon_turns": 0, "boon2": "CLEANSE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "BEAM", "anim_color": "YELLOW"}, {"idx": 21, "define": "ABILITY_DARKCURSE", "name": "Dark Curse", "recipe_str": "DARK x2", "recipe_genes": ["DARK", "DARK"], "power": 60, "accuracy": 90, "cooldown": 3, "dmg_types": ["DARK", "NONE"], "boon": "DRAIN", "boon_val": 60, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "HEAL_DOWN", "bane_val": 75, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "BUFF", "anim_color": "PURPLE"}, {"idx": 22, "define": "ABILITY_HOLY_WRATH", "name": "Holy Wrath", "recipe_str": "LIGHT x3", "recipe_genes": ["LIGHT", "LIGHT", "LIGHT"], "power": 90, "accuracy": 90, "cooldown": 5, "dmg_types": ["LIGHT", "NONE"], "boon": "CLEANSE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "PURGE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "BEAM", "anim_color": "WHITE"}, {"idx": 23, "define": "ABILITY_VOID_REAP", "name": "Void Reap", "recipe_str": "DARK x3", "recipe_genes": ["DARK", "DARK", "DARK"], "power": 80, "accuracy": 90, "cooldown": 5, "dmg_types": ["DARK", "NONE"], "boon": "DRAIN", "boon_val": 70, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "PURGE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "DRAIN", "anim_color": "DKPURP"}, {"idx": 24, "define": "ABILITY_TALON_STRIKE", "name": "Talon Strike", "recipe_str": "CLAW + WING", "recipe_genes": ["CLAW", "WING"], "power": 65, "accuracy": 90, "cooldown": 3, "dmg_types": ["CLAW", "WING"], "boon": "SPD_UP", "boon_val": 7, "boon_turns": 4, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 5, "crit_mod": 0, "anim": "SLASH", "anim_color": "CYAN"}, {"idx": 25, "define": "ABILITY_EMBER_CLAW", "name": "Ember Claw", "recipe_str": "CLAW + FIRE", "recipe_genes": ["CLAW", "FIRE"], "power": 60, "accuracy": 90, "cooldown": 3, "dmg_types": ["CLAW", "FIRE"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "ATK_DOWN", "bane_val": 5, "bane_turns": 3, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "ORANGE"}, {"idx": 26, "define": "ABILITY_TIDAL_RAKE", "name": "Tidal Rake", "recipe_str": "CLAW + WATER", "recipe_genes": ["CLAW", "WATER"], "power": 55, "accuracy": 95, "cooldown": 3, "dmg_types": ["CLAW", "WATER"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "SPD_DOWN", "bane_val": 7, "bane_turns": 3, "bane2": "HEAL_DOWN", "bane2_val": 75, "bane2_turns": 3, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "BLUE"}, {"idx": 27, "define": "ABILITY_GALE_SLASH", "name": "Gale Slash", "recipe_str": "CLAW + AIR", "recipe_genes": ["CLAW", "AIR"], "power": 55, "accuracy": 90, "cooldown": 3, "dmg_types": ["CLAW", "AIR"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "BLIND", "bane_val": 20, "bane_turns": 3, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 5, "anim": "SLASH", "anim_color": "CYAN"}, {"idx": 28, "define": "ABILITY_WILD_CHARGE", "name": "Wild Charge", "recipe_str": "CLAW + EARTH", "recipe_genes": ["CLAW", "EARTH"], "power": 65, "accuracy": 85, "cooldown": 3, "dmg_types": ["CLAW", "EARTH"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "CRIT_DOWN", "bane_val": 20, "bane_turns": 1, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "IMPACT", "anim_color": "BROWN"}, {"idx": 29, "define": "ABILITY_SUNDER", "name": "Sunder", "recipe_str": "CLAW + LIGHT", "recipe_genes": ["CLAW", "LIGHT"], "power": 55, "accuracy": 90, "cooldown": 4, "dmg_types": ["CLAW", "LIGHT"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "DEF_DOWN", "bane_val": 8, "bane_turns": 4, "bane2": "BLIND", "bane2_val": 25, "bane2_turns": 2, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "YELLOW"}, {"idx": 30, "define": "ABILITY_SHDWREND", "name": "Shadow Rend", "recipe_str": "CLAW + DARK", "recipe_genes": ["CLAW", "DARK"], "power": 65, "accuracy": 85, "cooldown": 3, "dmg_types": ["CLAW", "DARK"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "DEF_DOWN", "bane_val": 7, "bane_turns": 4, "bane2": "HEAL_DOWN", "bane2_val": 75, "bane2_turns": 3, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "PURPLE"}, {"idx": 31, "define": "ABILITY_THORNS", "name": "Thorn Shell", "recipe_str": "SHELL + FANG", "recipe_genes": ["SHELL", "FANG"], "power": 0, "accuracy": 100, "cooldown": 3, "dmg_types": ["NONE", "NONE"], "boon": "THORNS", "boon_val": 20, "boon_turns": 4, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SHIELD", "anim_color": "GREEN"}, {"idx": 32, "define": "ABILITY_LAVA_COAT", "name": "Lava Coat", "recipe_str": "SHELL + FIRE", "recipe_genes": ["SHELL", "FIRE"], "power": 0, "accuracy": 100, "cooldown": 3, "dmg_types": ["NONE", "NONE"], "boon": "DEF_UP", "boon_val": 10, "boon_turns": 4, "boon2": "THORNS", "boon2_val": 20, "boon2_turns": 4, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SHIELD", "anim_color": "ORANGE"}, {"idx": 33, "define": "ABILITY_MEND", "name": "Mend", "recipe_str": "SHELL + WATER", "recipe_genes": ["SHELL", "WATER"], "power": 0, "accuracy": 100, "cooldown": 3, "dmg_types": ["NONE", "NONE"], "boon": "HEAL", "boon_val": 15, "boon_turns": 0, "boon2": "DEF_UP", "boon2_val": 5, "boon2_turns": 3, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "HEAL", "anim_color": "GREEN"}, {"idx": 34, "define": "ABILITY_BREATHE", "name": "Breathe", "recipe_str": "SHELL + AIR", "recipe_genes": ["SHELL", "AIR"], "power": 0, "accuracy": 100, "cooldown": 4, "dmg_types": ["NONE", "NONE"], "boon": "DEF_UP", "boon_val": 10, "boon_turns": 4, "boon2": "ATK_UP", "boon2_val": 7, "boon2_turns": 4, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "BUFF", "anim_color": "GREEN"}, {"idx": 35, "define": "ABILITY_IRON_DEFENSE", "name": "Iron Shell", "recipe_str": "SHELL + EARTH", "recipe_genes": ["SHELL", "EARTH"], "power": 0, "accuracy": 100, "cooldown": 4, "dmg_types": ["NONE", "NONE"], "boon": "REFLECT", "boon_val": 1, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "BUFF", "anim_color": "BLUE"}, {"idx": 36, "define": "ABILITY_HOLY_WARD", "name": "Holy Ward", "recipe_str": "SHELL + LIGHT", "recipe_genes": ["SHELL", "LIGHT"], "power": 0, "accuracy": 100, "cooldown": 3, "dmg_types": ["NONE", "NONE"], "boon": "DEF_UP", "boon_val": 10, "boon_turns": 3, "boon2": "CLEANSE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SHIELD", "anim_color": "YELLOW"}, {"idx": 37, "define": "ABILITY_WITHER", "name": "Petrify", "recipe_str": "SHELL + DARK", "recipe_genes": ["SHELL", "DARK"], "power": 40, "accuracy": 100, "cooldown": 4, "dmg_types": ["SHELL", "DARK"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "STUN", "bane_val": 0, "bane_turns": 1, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "POISON", "anim_color": "LTPURP"}, {"idx": 38, "define": "ABILITY_WILDFIRE", "name": "Wildfire", "recipe_str": "WING + FIRE", "recipe_genes": ["WING", "FIRE"], "power": 60, "accuracy": 85, "cooldown": 2, "dmg_types": ["WING", "FIRE"], "boon": "SPD_UP", "boon_val": 7, "boon_turns": 3, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "POISON", "bane_val": 6, "bane_turns": 3, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "EXPLOSION", "anim_color": "ORANGE"}, {"idx": 39, "define": "ABILITY_SLIP_STRIKE", "name": "Slip Strike", "recipe_str": "WING + WATER", "recipe_genes": ["WING", "WATER"], "power": 50, "accuracy": 95, "cooldown": 2, "dmg_types": ["WING", "WATER"], "boon": "SPD_UP", "boon_val": 5, "boon_turns": 3, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "SPD_DOWN", "bane_val": 7, "bane_turns": 3, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "CYAN"}, {"idx": 40, "define": "ABILITY_VEIL", "name": "Veil", "recipe_str": "WING + AIR", "recipe_genes": ["WING", "AIR"], "power": 0, "accuracy": 100, "cooldown": 4, "dmg_types": ["NONE", "NONE"], "boon": "DODGE", "boon_val": 1, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "BLIND", "bane_val": 20, "bane_turns": 2, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SHIELD", "anim_color": "CYAN"}, {"idx": 41, "define": "ABILITY_DUST_GUARD", "name": "Dust Guard", "recipe_str": "WING + EARTH", "recipe_genes": ["WING", "EARTH"], "power": 60, "accuracy": 95, "cooldown": 3, "dmg_types": ["WING", "EARTH"], "boon": "SHIELD", "boon_val": 20, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "IMPACT", "anim_color": "BROWN"}, {"idx": 42, "define": "ABILITY_SOLARWIND", "name": "Solar Wind", "recipe_str": "WING + LIGHT", "recipe_genes": ["WING", "LIGHT"], "power": 55, "accuracy": 90, "cooldown": 3, "dmg_types": ["WING", "LIGHT"], "boon": "ATK_UP", "boon_val": 5, "boon_turns": 3, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "BLIND", "bane_val": 20, "bane_turns": 2, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "BEAM", "anim_color": "YELLOW"}, {"idx": 43, "define": "ABILITY_SHADESLIP", "name": "Shadeslip", "recipe_str": "WING + DARK", "recipe_genes": ["WING", "DARK"], "power": 50, "accuracy": 95, "cooldown": 3, "dmg_types": ["WING", "DARK"], "boon": "DODGE", "boon_val": 1, "boon_turns": 0, "boon2": "DRAIN", "boon2_val": 60, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "PROJECTILE", "anim_color": "DKPURP"}, {"idx": 44, "define": "ABILITY_RECKLESS_SLASH", "name": "Reckless Slash", "recipe_str": "FANG + FIRE", "recipe_genes": ["FANG", "FIRE"], "power": 75, "accuracy": 85, "cooldown": 3, "dmg_types": ["FANG", "FIRE"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "POISON", "bane_val": 8, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "DEF_DOWN", "self_bane_val": 5, "self_bane_turns": 3, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "RED"}, {"idx": 45, "define": "ABILITY_TIDAL_FANG", "name": "Tidal Fang", "recipe_str": "FANG + WATER", "recipe_genes": ["FANG", "WATER"], "power": 55, "accuracy": 90, "cooldown": 3, "dmg_types": ["FANG", "WATER"], "boon": "CRIT_UP", "boon_val": 10, "boon_turns": 3, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "SPD_DOWN", "bane_val": 5, "bane_turns": 3, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "CYAN"}, {"idx": 46, "define": "ABILITY_SKYFANG", "name": "Skyfang", "recipe_str": "FANG + AIR", "recipe_genes": ["FANG", "AIR"], "power": 65, "accuracy": 90, "cooldown": 3, "dmg_types": ["FANG", "AIR"], "boon": "CRIT_UP", "boon_val": 10, "boon_turns": 3, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "BLIND", "bane_val": 20, "bane_turns": 2, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "CYAN"}, {"idx": 47, "define": "ABILITY_STONE_FANG", "name": "Stone Fang", "recipe_str": "FANG + EARTH", "recipe_genes": ["FANG", "EARTH"], "power": 60, "accuracy": 85, "cooldown": 3, "dmg_types": ["FANG", "EARTH"], "boon": "SHIELD", "boon_val": 15, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "POISON", "bane_val": 6, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "BROWN"}, {"idx": 48, "define": "ABILITY_HALOBITE", "name": "Halobite", "recipe_str": "FANG + LIGHT", "recipe_genes": ["FANG", "LIGHT"], "power": 60, "accuracy": 85, "cooldown": 3, "dmg_types": ["FANG", "LIGHT"], "boon": "HEAL", "boon_val": 15, "boon_turns": 0, "boon2": "CRIT_UP", "boon2_val": 15, "boon2_turns": 3, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "HEAL", "anim_color": "YELLOW"}, {"idx": 49, "define": "ABILITY_VOIDFANG", "name": "Void Fang", "recipe_str": "FANG + DARK", "recipe_genes": ["FANG", "DARK"], "power": 55, "accuracy": 85, "cooldown": 2, "dmg_types": ["FANG", "DARK"], "boon": "CRIT_UP", "boon_val": 15, "boon_turns": 3, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "POISON", "bane_val": 8, "bane_turns": 3, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "POISON", "anim_color": "PURPLE"}, {"idx": 50, "define": "ABILITY_STOMP", "name": "Stomp", "recipe_str": "FIRE + EARTH", "recipe_genes": ["FIRE", "EARTH"], "power": 50, "accuracy": 95, "cooldown": 3, "dmg_types": ["FIRE", "EARTH"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "POISON", "bane_val": 10, "bane_turns": 2, "bane2": "CRIT_DOWN", "bane2_val": 20, "bane2_turns": 1, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "IMPACT", "anim_color": "BROWN"}, {"idx": 51, "define": "ABILITY_HOLY_SEAR", "name": "Holy Sear", "recipe_str": "FIRE + LIGHT", "recipe_genes": ["FIRE", "LIGHT"], "power": 55, "accuracy": 90, "cooldown": 4, "dmg_types": ["FIRE", "LIGHT"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "POISON", "bane_val": 10, "bane_turns": 2, "bane2": "BLIND", "bane2_val": 20, "bane2_turns": 2, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "BEAM", "anim_color": "ORANGE"}, {"idx": 52, "define": "ABILITY_HELLFIRE", "name": "Hellfire", "recipe_str": "FIRE + DARK", "recipe_genes": ["FIRE", "DARK"], "power": 65, "accuracy": 85, "cooldown": 4, "dmg_types": ["FIRE", "DARK"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "POISON", "bane_val": 10, "bane_turns": 2, "bane2": "PURGE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "EXPLOSION", "anim_color": "DKRED"}, {"idx": 53, "define": "ABILITY_MISTRAL", "name": "Mistral", "recipe_str": "WATER + AIR", "recipe_genes": ["WATER", "AIR"], "power": 65, "accuracy": 95, "cooldown": 3, "dmg_types": ["WATER", "AIR"], "boon": "HEAL", "boon_val": 15, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "PROJECTILE", "anim_color": "CYAN"}, {"idx": 54, "define": "ABILITY_BLESSED_RAIN", "name": "Blessed Rain", "recipe_str": "WATER + LIGHT", "recipe_genes": ["WATER", "LIGHT"], "power": 0, "accuracy": 100, "cooldown": 3, "dmg_types": ["NONE", "NONE"], "boon": "REGEN", "boon_val": 12, "boon_turns": 4, "boon2": "CLEANSE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "HEAL", "anim_color": "LTBLUE"}, {"idx": 55, "define": "ABILITY_VOIDSTEAL", "name": "Voidsteal", "recipe_str": "WATER + DARK", "recipe_genes": ["WATER", "DARK"], "power": 55, "accuracy": 90, "cooldown": 3, "dmg_types": ["WATER", "DARK"], "boon": "DRAIN", "boon_val": 60, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "PURGE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "PURGE", "anim_color": "PURPLE"}, {"idx": 56, "define": "ABILITY_SOLAR_GUST", "name": "Solar Gust", "recipe_str": "AIR + LIGHT", "recipe_genes": ["AIR", "LIGHT"], "power": 50, "accuracy": 95, "cooldown": 3, "dmg_types": ["AIR", "LIGHT"], "boon": "ATK_UP", "boon_val": 7, "boon_turns": 4, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "BLIND", "bane_val": 15, "bane_turns": 2, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "PROJECTILE", "anim_color": "YELLOW"}, {"idx": 57, "define": "ABILITY_SHADOWGALE", "name": "Shadowgale", "recipe_str": "AIR + DARK", "recipe_genes": ["AIR", "DARK"], "power": 0, "accuracy": 100, "cooldown": 4, "dmg_types": ["NONE", "NONE"], "boon": "DODGE", "boon_val": 1, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "BLIND", "bane_val": 25, "bane_turns": 3, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "PROJECTILE", "anim_color": "PURPLE"}, {"idx": 58, "define": "ABILITY_SANCTUM", "name": "Sanctum", "recipe_str": "EARTH + LIGHT", "recipe_genes": ["EARTH", "LIGHT"], "power": 60, "accuracy": 85, "cooldown": 4, "dmg_types": ["EARTH", "LIGHT"], "boon": "SHIELD", "boon_val": 15, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "BLIND", "bane_val": 25, "bane_turns": 2, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SHIELD", "anim_color": "YELLOW"}, {"idx": 59, "define": "ABILITY_SHOCK", "name": "Blight", "recipe_str": "EARTH + DARK", "recipe_genes": ["EARTH", "DARK"], "power": 55, "accuracy": 90, "cooldown": 4, "dmg_types": ["EARTH", "DARK"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "CRIT_DOWN", "bane_val": 20, "bane_turns": 1, "bane2": "HEAL_DOWN", "bane2_val": 75, "bane2_turns": 3, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "IMPACT", "anim_color": "DKPURP"}, {"idx": 60, "define": "ABILITY_ECLIPSE", "name": "Eclipse", "recipe_str": "LIGHT + DARK", "recipe_genes": ["LIGHT", "DARK"], "power": 60, "accuracy": 75, "cooldown": 4, "dmg_types": ["LIGHT", "DARK"], "boon": "ATK_UP", "boon_val": 5, "boon_turns": 4, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "STUN", "bane_val": 0, "bane_turns": 1, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "BEAM", "anim_color": "DKPURP"}, {"idx": 61, "define": "ABILITY_TWIN_TALON", "name": "Twin Talon", "recipe_str": "CLAW x2 + WING", "recipe_genes": ["CLAW", "CLAW", "WING"], "power": 80, "accuracy": 85, "cooldown": 3, "dmg_types": ["CLAW", "WING"], "boon": "ATK_UP", "boon_val": 5, "boon_turns": 3, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "DEF_DOWN", "bane_val": 5, "bane_turns": 3, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 8, "crit_mod": 0, "anim": "SLASH", "anim_color": "CYAN"}, {"idx": 62, "define": "ABILITY_BULWARK", "name": "Bulwark", "recipe_str": "SHELL x2 + EARTH", "recipe_genes": ["SHELL", "SHELL", "EARTH"], "power": 0, "accuracy": 100, "cooldown": 5, "dmg_types": ["NONE", "NONE"], "boon": "SHIELD", "boon_val": 50, "boon_turns": 0, "boon2": "DEF_UP", "boon2_val": 8, "boon2_turns": 4, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SHIELD", "anim_color": "GRAY"}, {"idx": 63, "define": "ABILITY_RAZOR_WIND", "name": "Razor Wind", "recipe_str": "WING x2 + AIR", "recipe_genes": ["WING", "WING", "AIR"], "power": 60, "accuracy": 90, "cooldown": 4, "dmg_types": ["WING", "AIR"], "boon": "DODGE", "boon_val": 1, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "BLIND", "bane_val": 20, "bane_turns": 3, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "CYAN"}, {"idx": 64, "define": "ABILITY_NIGHT_FEAST", "name": "Night Feast", "recipe_str": "FANG x2 + DARK", "recipe_genes": ["FANG", "FANG", "DARK"], "power": 55, "accuracy": 85, "cooldown": 3, "dmg_types": ["FANG", "DARK"], "boon": "DRAIN", "boon_val": 70, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "POISON", "bane_val": 8, "bane_turns": 3, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "DRAIN", "anim_color": "DKPURP"}, {"idx": 65, "define": "ABILITY_INFERNO", "name": "Inferno", "recipe_str": "FIRE x2 + EARTH", "recipe_genes": ["FIRE", "FIRE", "EARTH"], "power": 80, "accuracy": 85, "cooldown": 3, "dmg_types": ["FIRE", "EARTH"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "POISON", "bane_val": 10, "bane_turns": 4, "bane2": "DEF_DOWN", "bane2_val": 5, "bane2_turns": 4, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "EXPLOSION", "anim_color": "RED"}, {"idx": 66, "define": "ABILITY_WELLSPRING", "name": "Wellspring", "recipe_str": "SHELL + WATER x2", "recipe_genes": ["SHELL", "WATER", "WATER"], "power": 0, "accuracy": 100, "cooldown": 5, "dmg_types": ["NONE", "NONE"], "boon": "REGEN", "boon_val": 15, "boon_turns": 5, "boon2": "DEF_UP", "boon2_val": 5, "boon2_turns": 3, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "HEAL", "anim_color": "LTBLUE"}, {"idx": 67, "define": "ABILITY_CYCLONE", "name": "Cyclone", "recipe_str": "WING + AIR x2", "recipe_genes": ["WING", "AIR", "AIR"], "power": 60, "accuracy": 85, "cooldown": 3, "dmg_types": ["WING", "AIR"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "BLIND", "bane_val": 25, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "EXPLOSION", "anim_color": "CYAN"}, {"idx": 68, "define": "ABILITY_STONE_LOCK", "name": "Stone Lock", "recipe_str": "FANG + EARTH x2", "recipe_genes": ["FANG", "EARTH", "EARTH"], "power": 75, "accuracy": 95, "cooldown": 4, "dmg_types": ["FANG", "EARTH"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "ATK_DOWN", "bane_val": 5, "bane_turns": 3, "bane2": "CRIT_DOWN", "bane2_val": 20, "bane2_turns": 3, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "IMPACT", "anim_color": "BROWN"}, {"idx": 69, "define": "ABILITY_HEAVENS_EDGE", "name": "Heavens Edge", "recipe_str": "CLAW + LIGHT x2", "recipe_genes": ["CLAW", "LIGHT", "LIGHT"], "power": 80, "accuracy": 85, "cooldown": 3, "dmg_types": ["CLAW", "LIGHT"], "boon": "HEAL", "boon_val": 15, "boon_turns": 0, "boon2": "ATK_UP", "boon2_val": 5, "boon2_turns": 3, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "YELLOW"}, {"idx": 70, "define": "ABILITY_SACRED_TIDE", "name": "Sacred Tide", "recipe_str": "WATER + LIGHT x2", "recipe_genes": ["WATER", "LIGHT", "LIGHT"], "power": 0, "accuracy": 100, "cooldown": 4, "dmg_types": ["NONE", "NONE"], "boon": "HEAL", "boon_val": 35, "boon_turns": 0, "boon2": "REGEN", "boon2_val": 15, "boon2_turns": 4, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "BEAM", "anim_color": "WHITE"}, {"idx": 71, "define": "ABILITY_SOLAR_BURST", "name": "Solar Burst", "recipe_str": "FIRE + LIGHT x2", "recipe_genes": ["FIRE", "LIGHT", "LIGHT"], "power": 70, "accuracy": 85, "cooldown": 4, "dmg_types": ["FIRE", "LIGHT"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "POISON", "bane_val": 15, "bane_turns": 2, "bane2": "BLIND", "bane2_val": 20, "bane2_turns": 3, "self_bane": "BLIND", "self_bane_val": 25, "self_bane_turns": 2, "spd_mod": 0, "crit_mod": 0, "anim": "EXPLOSION", "anim_color": "YELLOW"}, {"idx": 72, "define": "ABILITY_ABYSS_REND", "name": "Abyssal Rend", "recipe_str": "CLAW + DARK x2", "recipe_genes": ["CLAW", "DARK", "DARK"], "power": 70, "accuracy": 80, "cooldown": 3, "dmg_types": ["CLAW", "DARK"], "boon": "DRAIN", "boon_val": 60, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "DEF_DOWN", "bane_val": 7, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "DKPURP"}, {"idx": 73, "define": "ABILITY_FERAL_VOID", "name": "Feral Void", "recipe_str": "FANG + DARK x2", "recipe_genes": ["FANG", "DARK", "DARK"], "power": 60, "accuracy": 85, "cooldown": 3, "dmg_types": ["FANG", "DARK"], "boon": "CRIT_UP", "boon_val": 15, "boon_turns": 4, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "POISON", "bane_val": 10, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "POISON", "anim_color": "DKPURP"}, {"idx": 74, "define": "ABILITY_VOID_NOVA", "name": "Void Nova", "recipe_str": "EARTH + DARK x2", "recipe_genes": ["EARTH", "DARK", "DARK"], "power": 80, "accuracy": 80, "cooldown": 4, "dmg_types": ["EARTH", "DARK"], "boon": "DRAIN", "boon_val": 50, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "IMPACT", "anim_color": "DKPURP"}, {"idx": 75, "define": "ABILITY_APEX_TRIAD", "name": "Apex Triad", "recipe_str": "CLAW + WING + FANG", "recipe_genes": ["CLAW", "WING", "FANG"], "power": 85, "accuracy": 80, "cooldown": 4, "dmg_types": ["CLAW", "FANG"], "boon": "ATK_UP", "boon_val": 7, "boon_turns": 3, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "DEF_DOWN", "bane_val": 7, "bane_turns": 3, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "RED"}, {"idx": 76, "define": "ABILITY_STAMPEDE", "name": "Stampede", "recipe_str": "CLAW + SHELL + EARTH", "recipe_genes": ["CLAW", "SHELL", "EARTH"], "power": 85, "accuracy": 80, "cooldown": 4, "dmg_types": ["CLAW", "EARTH"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "DEF_DOWN", "bane_val": 8, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "ORANGE"}, {"idx": 77, "define": "ABILITY_FORTRESS", "name": "Fortress", "recipe_str": "SHELL + WING + EARTH", "recipe_genes": ["SHELL", "WING", "EARTH"], "power": 0, "accuracy": 100, "cooldown": 5, "dmg_types": ["NONE", "NONE"], "boon": "DEF_UP", "boon_val": 10, "boon_turns": 4, "boon2": "SHIELD", "boon2_val": 20, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "BUFF", "anim_color": "BLUE"}, {"idx": 78, "define": "ABILITY_PARRY", "name": "Parry", "recipe_str": "SHELL + FANG + EARTH", "recipe_genes": ["SHELL", "FANG", "EARTH"], "power": 0, "accuracy": 100, "cooldown": 4, "dmg_types": ["NONE", "NONE"], "boon": "REFLECT", "boon_val": 1, "boon_turns": 0, "boon2": "CRIT_UP", "boon2_val": 20, "boon2_turns": 4, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SHIELD", "anim_color": "WHITE"}, {"idx": 79, "define": "ABILITY_RAZOR_SPRINT", "name": "Razor Sprint", "recipe_str": "CLAW + WING + AIR", "recipe_genes": ["CLAW", "WING", "AIR"], "power": 70, "accuracy": 85, "cooldown": 3, "dmg_types": ["CLAW", "WING"], "boon": "SPD_UP", "boon_val": 10, "boon_turns": 4, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "DEF_DOWN", "bane_val": 5, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 10, "crit_mod": 0, "anim": "SLASH", "anim_color": "CYAN"}, {"idx": 80, "define": "ABILITY_HAWKSTRIKE", "name": "Hawkstrike", "recipe_str": "WING + FANG + AIR", "recipe_genes": ["WING", "FANG", "AIR"], "power": 70, "accuracy": 85, "cooldown": 3, "dmg_types": ["WING", "FANG"], "boon": "DODGE", "boon_val": 1, "boon_turns": 0, "boon2": "CRIT_UP", "boon2_val": 15, "boon2_turns": 3, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "CYAN"}, {"idx": 81, "define": "ABILITY_BLOOD_CURSE", "name": "Blood Curse", "recipe_str": "CLAW + FANG + DARK", "recipe_genes": ["CLAW", "FANG", "DARK"], "power": 80, "accuracy": 85, "cooldown": 4, "dmg_types": ["CLAW", "FANG"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "POISON", "bane_val": 15, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "POISON", "self_bane_val": 8, "self_bane_turns": 4, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "DKPURP"}, {"idx": 82, "define": "ABILITY_VENOM_DRAIN", "name": "Venom Drain", "recipe_str": "FANG + WATER + DARK", "recipe_genes": ["FANG", "WATER", "DARK"], "power": 60, "accuracy": 85, "cooldown": 3, "dmg_types": ["FANG", "WATER"], "boon": "DRAIN", "boon_val": 70, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "SPD_DOWN", "bane_val": 10, "bane_turns": 3, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SLASH", "anim_color": "LTPURP"}, {"idx": 83, "define": "ABILITY_FIRESTORM", "name": "Firestorm", "recipe_str": "WING + FIRE + AIR", "recipe_genes": ["WING", "FIRE", "AIR"], "power": 80, "accuracy": 80, "cooldown": 4, "dmg_types": ["WING", "FIRE"], "boon": "SPD_UP", "boon_val": 10, "boon_turns": 4, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "ATK_DOWN", "bane_val": 5, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "EXPLOSION", "anim_color": "RED"}, {"idx": 84, "define": "ABILITY_MAGMA_REAP", "name": "Magma Reap", "recipe_str": "FIRE + EARTH + DARK", "recipe_genes": ["FIRE", "EARTH", "DARK"], "power": 75, "accuracy": 80, "cooldown": 4, "dmg_types": ["FIRE", "EARTH"], "boon": "DRAIN", "boon_val": 60, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "POISON", "bane_val": 8, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "DRAIN", "anim_color": "RED"}, {"idx": 85, "define": "ABILITY_AQUA_MANTLE", "name": "Aqua Mantle", "recipe_str": "SHELL + WATER + AIR", "recipe_genes": ["SHELL", "WATER", "AIR"], "power": 0, "accuracy": 100, "cooldown": 4, "dmg_types": ["NONE", "NONE"], "boon": "SHIELD", "boon_val": 25, "boon_turns": 0, "boon2": "REGEN", "boon2_val": 10, "boon2_turns": 3, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SHIELD", "anim_color": "GREEN"}, {"idx": 86, "define": "ABILITY_SPRING_RENEWAL", "name": "Spring Renewal", "recipe_str": "SHELL + WATER + LIGHT", "recipe_genes": ["SHELL", "WATER", "LIGHT"], "power": 0, "accuracy": 100, "cooldown": 5, "dmg_types": ["NONE", "NONE"], "boon": "REGEN", "boon_val": 15, "boon_turns": 5, "boon2": "HEAL", "boon2_val": 15, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "HEAL", "anim_color": "WHITE"}, {"idx": 87, "define": "ABILITY_STEAM_JET", "name": "Steam Jet", "recipe_str": "FIRE + WATER + AIR", "recipe_genes": ["FIRE", "WATER", "AIR"], "power": 65, "accuracy": 85, "cooldown": 4, "dmg_types": ["FIRE", "WATER"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "BLIND", "bane_val": 25, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "PROJECTILE", "anim_color": "LTBLUE"}, {"idx": 88, "define": "ABILITY_DUST_DEVIL", "name": "Dust Devil", "recipe_str": "WING + AIR + EARTH", "recipe_genes": ["WING", "AIR", "EARTH"], "power": 70, "accuracy": 85, "cooldown": 4, "dmg_types": ["WING", "EARTH"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "SPD_DOWN", "bane_val": 10, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "EXPLOSION", "anim_color": "BROWN"}, {"idx": 89, "define": "ABILITY_NULL_CRASH", "name": "Null Crash", "recipe_str": "CLAW + EARTH + LIGHT", "recipe_genes": ["CLAW", "EARTH", "LIGHT"], "power": 85, "accuracy": 75, "cooldown": 4, "dmg_types": ["CLAW", "EARTH"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "DEF_DOWN", "bane_val": 8, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "PURGE", "anim_color": "WHITE"}, {"idx": 90, "define": "ABILITY_MAGMA_SURGE", "name": "Magma Surge", "recipe_str": "FIRE + WATER + EARTH", "recipe_genes": ["FIRE", "WATER", "EARTH"], "power": 80, "accuracy": 80, "cooldown": 4, "dmg_types": ["FIRE", "EARTH"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "PURGE", "bane_val": 0, "bane_turns": 0, "bane2": "SPD_DOWN", "bane2_val": 10, "bane2_turns": 4, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "EXPLOSION", "anim_color": "ORANGE"}, {"idx": 91, "define": "ABILITY_ECLIPSE_BLADE", "name": "Eclipse Blade", "recipe_str": "CLAW + LIGHT + DARK", "recipe_genes": ["CLAW", "LIGHT", "DARK"], "power": 85, "accuracy": 80, "cooldown": 4, "dmg_types": ["CLAW", "LIGHT"], "boon": "ATK_UP", "boon_val": 7, "boon_turns": 4, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "DEF_DOWN", "bane_val": 8, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 10, "anim": "SLASH", "anim_color": "PURPLE"}, {"idx": 92, "define": "ABILITY_TWILIGHT_WARD", "name": "Twilight Ward", "recipe_str": "SHELL + LIGHT + DARK", "recipe_genes": ["SHELL", "LIGHT", "DARK"], "power": 80, "accuracy": 100, "cooldown": 5, "dmg_types": ["SHELL", "LIGHT"], "boon": "ATK_UP", "boon_val": 10, "boon_turns": 4, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "STUN", "bane_val": 0, "bane_turns": 1, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "BUFF", "anim_color": "LTPURP"}, {"idx": 93, "define": "ABILITY_SOLAR_MIST", "name": "Solar Mist", "recipe_str": "WATER + AIR + LIGHT", "recipe_genes": ["WATER", "AIR", "LIGHT"], "power": 65, "accuracy": 90, "cooldown": 4, "dmg_types": ["WATER", "LIGHT"], "boon": "HEAL", "boon_val": 20, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "BLIND", "bane_val": 20, "bane_turns": 3, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "HEAL", "anim_color": "YELLOW"}, {"idx": 94, "define": "ABILITY_SANCTIFIED_STONE", "name": "Sanctum Stone", "recipe_str": "FANG + EARTH + LIGHT", "recipe_genes": ["FANG", "EARTH", "LIGHT"], "power": 70, "accuracy": 80, "cooldown": 4, "dmg_types": ["FANG", "LIGHT"], "boon": "THORNS", "boon_val": 15, "boon_turns": 4, "boon2": "CLEANSE", "boon2_val": 0, "boon2_turns": 0, "bane": "NONE", "bane_val": 0, "bane_turns": 0, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SHIELD", "anim_color": "YELLOW"}, {"idx": 95, "define": "ABILITY_DEATH_MARCH", "name": "Death March", "recipe_str": "FANG + EARTH + DARK", "recipe_genes": ["FANG", "EARTH", "DARK"], "power": 80, "accuracy": 80, "cooldown": 4, "dmg_types": ["FANG", "DARK"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "DEF_DOWN", "bane_val": 8, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "SPD_DOWN", "self_bane_val": 7, "self_bane_turns": 3, "spd_mod": 0, "crit_mod": 0, "anim": "IMPACT", "anim_color": "BROWN"}, {"idx": 96, "define": "ABILITY_BRIMSTONE_WING", "name": "Brimstone Wing", "recipe_str": "WING + FIRE + DARK", "recipe_genes": ["WING", "FIRE", "DARK"], "power": 75, "accuracy": 80, "cooldown": 4, "dmg_types": ["WING", "DARK"], "boon": "NONE", "boon_val": 0, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "POISON", "bane_val": 15, "bane_turns": 2, "bane2": "PURGE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "POISON", "anim_color": "DKRED"}, {"idx": 97, "define": "ABILITY_VOIDPOOL", "name": "Voidpool", "recipe_str": "WATER + EARTH + DARK", "recipe_genes": ["WATER", "EARTH", "DARK"], "power": 70, "accuracy": 85, "cooldown": 4, "dmg_types": ["WATER", "DARK"], "boon": "DRAIN", "boon_val": 70, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "SPD_DOWN", "bane_val": 7, "bane_turns": 4, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "DRAIN", "anim_color": "DKPURP"}, {"idx": 98, "define": "ABILITY_SHADOW_AEGIS", "name": "Shadow Aegis", "recipe_str": "AIR + EARTH + DARK", "recipe_genes": ["AIR", "EARTH", "DARK"], "power": 0, "accuracy": 100, "cooldown": 4, "dmg_types": ["NONE", "NONE"], "boon": "SHIELD", "boon_val": 25, "boon_turns": 0, "boon2": "NONE", "boon2_val": 0, "boon2_turns": 0, "bane": "BLIND", "bane_val": 25, "bane_turns": 3, "bane2": "NONE", "bane2_val": 0, "bane2_turns": 0, "self_bane": "NONE", "self_bane_val": 0, "self_bane_turns": 0, "spd_mod": 0, "crit_mod": 0, "anim": "SHIELD", "anim_color": "PURPLE"}];
+</script>
+<!-- ability_format.js inlined so this file works standalone (published as a
+     GitHub release asset, where a relative <script src> would 404). -->
+<script>
+// ability_format.js — JS formatter for the web editor (tools/abilities.html).
+//
+// Renders compact + detail strings from the mechanical fields so the browser
+// preview matches what the device draws via drawAbilityDetailBlock() (ui.cpp).
+//
+// Maintenance discipline: when a new BoonType or BaneType is added, update
+// BOTH this file AND drawAbilityDetailBlock() in ui.cpp so the web preview and
+// the device stay in sync.
+
+'use strict';
+
+// Internal unit codes for this formatter's effect-string layout.
+// POISON and THORNS use UNIT_FLAT_TURNS — the tag conveys "damage" implicitly.
+const UNIT_NONE        = 0;
+const UNIT_PCT         = 1;
+const UNIT_PCT_TURNS   = 2;
+const UNIT_FLAT_TURNS  = 3;
+const UNIT_TURNS_ONLY  = 4;
+const UNIT_CHARGES     = 5;
+
+// Keyed by BoonType string ("HEAL", "REGEN", …) — abilities.json strips the
+// "BOON_" prefix on storage. Same tags as the C++ table.
+const BOON_FMT = {
+  'NONE':    { tag: '',        unit: UNIT_NONE },
+  'ATK_UP':  { tag: 'atk+',    unit: UNIT_FLAT_TURNS },
+  'DEF_UP':  { tag: 'def+',    unit: UNIT_FLAT_TURNS },
+  'SPD_UP':  { tag: 'spd+',    unit: UNIT_FLAT_TURNS },
+  'CRIT_UP': { tag: 'crit+',   unit: UNIT_FLAT_TURNS },
+  'HEAL':    { tag: 'heal',    unit: UNIT_PCT },
+  'CLEANSE': { tag: 'cleanse', unit: UNIT_NONE },
+  'DODGE':   { tag: 'dodge',   unit: UNIT_CHARGES },
+  'REFLECT': { tag: 'reflect', unit: UNIT_CHARGES },
+  'DRAIN':   { tag: 'drain',   unit: UNIT_PCT },
+  'REGEN':   { tag: 'regen',   unit: UNIT_PCT_TURNS },
+  'SHIELD':  { tag: 'shield',  unit: UNIT_PCT },
+  'THORNS':  { tag: 'thorns',  unit: UNIT_FLAT_TURNS },
+};
+
+const BANE_FMT = {
+  'NONE':      { tag: '',       unit: UNIT_NONE },
+  'ATK_DOWN':  { tag: 'atk-',   unit: UNIT_FLAT_TURNS },
+  'DEF_DOWN':  { tag: 'def-',   unit: UNIT_FLAT_TURNS },
+  'SPD_DOWN':  { tag: 'spd-',   unit: UNIT_FLAT_TURNS },
+  'CRIT_DOWN': { tag: 'crit-',  unit: UNIT_FLAT_TURNS },
+  'POISON':    { tag: 'poison', unit: UNIT_FLAT_TURNS },
+  'STUN':      { tag: 'stun',   unit: UNIT_TURNS_ONLY },
+  'BLIND':     { tag: 'blind',  unit: UNIT_PCT_TURNS },
+  'PURGE':     { tag: 'purge',  unit: UNIT_NONE },
+  'HEAL_DOWN': { tag: 'heal-',  unit: UNIT_PCT_TURNS },
+};
+
+function _effect(fmt, val, turns) {
+  if (!fmt) return '';
+  switch (fmt.unit) {
+    case UNIT_NONE:         return fmt.tag;
+    case UNIT_PCT:          return `${fmt.tag} ${val}%`;
+    case UNIT_PCT_TURNS:    return `${fmt.tag} ${val}%/${turns}t`;
+    case UNIT_FLAT_TURNS:   return `${fmt.tag} ${val}/${turns}t`;
+    case UNIT_TURNS_ONLY:   return `${fmt.tag} ${turns}t`;
+    case UNIT_CHARGES:      return `${fmt.tag} ${val}`;
+    default:                return fmt.tag;
+  }
+}
+
+// Build the ordered list of effect clauses for an ability (from
+// tools/abilities.json schema: 'boon', 'boon_val', 'dmg_types', etc.).
+function _clauses(a) {
+  const out = [];
+
+  // 1. Damage clause
+  if (a.power > 0) {
+    let s = `Pwr ${a.power}`;
+    const t0 = a.dmg_types && a.dmg_types[0];
+    const t1 = a.dmg_types && a.dmg_types[1];
+    if (t0 && t0 !== 'NONE') {
+      s += ' ' + t0;
+      if (t1 && t1 !== 'NONE') s += '/' + t1;
+    }
+    out.push(s);
+  }
+
+  // 2. Primary self boon
+  if (a.boon && a.boon !== 'NONE')
+    out.push(_effect(BOON_FMT[a.boon], a.boon_val, a.boon_turns));
+
+  // 3. Secondary self boon
+  if (a.boon2 && a.boon2 !== 'NONE')
+    out.push(_effect(BOON_FMT[a.boon2], a.boon2_val, a.boon2_turns));
+
+  // 4. Primary foe bane
+  if (a.bane && a.bane !== 'NONE')
+    out.push('foe ' + _effect(BANE_FMT[a.bane], a.bane_val, a.bane_turns));
+
+  // 5. Secondary foe bane
+  if (a.bane2 && a.bane2 !== 'NONE')
+    out.push('foe ' + _effect(BANE_FMT[a.bane2], a.bane2_val, a.bane2_turns));
+
+  // 6. Self-bane (cost rider)
+  if (a.self_bane && a.self_bane !== 'NONE')
+    out.push('self ' + _effect(BANE_FMT[a.self_bane], a.self_bane_val, a.self_bane_turns));
+
+  // 7. spd_mod
+  if (a.spd_mod) {
+    const sign = a.spd_mod > 0 ? '+' : '';
+    out.push(`spd${sign}${a.spd_mod}`);
+  }
+
+  // 8. crit_mod
+  if (a.crit_mod) {
+    const sign = a.crit_mod > 0 ? '+' : '';
+    out.push(`crit${sign}${a.crit_mod}`);
+  }
+
+  // 9. Cooldown (always last)
+  out.push(`cd${a.cooldown}`);
+
+  return out;
+}
+
+// Compact: ", " separator, no length cap on the web side (device truncates).
+function formatAbilityCompact(ab) {
+  return _clauses(ab).join(', ');
+}
+
+// Detail: '\n' separator. Same content.
+function formatAbilityDetail(ab) {
+  return _clauses(ab).join('\n');
+}
+
+// Expose on window for the abilities.html inline <script>.
+if (typeof window !== 'undefined') {
+  window.formatAbilityCompact = formatAbilityCompact;
+  window.formatAbilityDetail  = formatAbilityDetail;
+}
+
+</script>
+<script>
+(function () {
+  var rows       = Array.from(document.querySelectorAll('.row'));
+  var search     = document.getElementById('search');
+  var geneChips  = Array.from(document.querySelectorAll('.chip[data-type]'));
+  var allChip    = document.getElementById('chip-all');
+  var countEl    = document.getElementById('count');
+  var totalCount = rows.length;
+  var andLabel   = document.getElementById('and-label');
+  var activeTypes = new Set();
+  var sortHeaders = Array.from(document.querySelectorAll('.header-row .sortable'));
+  var sortField  = 'idx';   // 'idx' | 'name' | 'recipe' | 'genes' | 'pwr' | 'cd' | 'raw' | 'delta'
+  var sortDir    = 'asc';
+  var rowParent  = rows.length ? rows[0].parentNode : null;
+
+  function rowTypes(row) {
+    var t = row.dataset.types;
+    return t ? t.split(' ').filter(Boolean) : [];
+  }
+
+  function syncChips() {
+    geneChips.forEach(function (chip) {
+      chip.classList.toggle('active', activeTypes.has(chip.dataset.type));
+    });
+    allChip.classList.toggle('active', activeTypes.size === 0);
+    andLabel.classList.toggle('visible', activeTypes.size >= 2);
+  }
+
+  function syncSortHeaders() {
+    sortHeaders.forEach(function (h) {
+      var ind = h.querySelector('.sort-ind');
+      if (h.dataset.sort === sortField) {
+        h.classList.add('active');
+        ind.textContent = sortDir === 'asc' ? '▲' : '▼';
+      } else {
+        h.classList.remove('active');
+        ind.textContent = '↕';
+      }
+    });
+  }
+
+  var NUMERIC_FIELDS = { idx:1, pwr:1, cd:1, genes:1, raw:1, delta:1 };
+
+  function compareRows(a, b) {
+    var av, bv;
+    if (NUMERIC_FIELDS[sortField]) {
+      av = parseFloat(a.dataset[sortField]);
+      bv = parseFloat(b.dataset[sortField]);
+      if (isNaN(av)) av = 0;
+      if (isNaN(bv)) bv = 0;
+      return av - bv;
+    }
+    av = (a.dataset[sortField] || '').toLowerCase();
+    bv = (b.dataset[sortField] || '').toLowerCase();
+    if (av < bv) return -1;
+    if (av > bv) return 1;
+    return 0;
+  }
+
+  function applySort() {
+    if (!rowParent) return;
+    var sorted = rows.slice().sort(function (a, b) {
+      var c = compareRows(a, b);
+      if (c === 0) {
+        // Stable secondary sort by idx so ties have a deterministic order.
+        c = (parseInt(a.dataset.idx, 10) || 0) - (parseInt(b.dataset.idx, 10) || 0);
+        return c;
+      }
+      return sortDir === 'asc' ? c : -c;
+    });
+    sorted.forEach(function (row) { rowParent.appendChild(row); });
+  }
+
+  function update() {
+    var q = search.value.trim().toLowerCase();
+    var types = Array.from(activeTypes);
+    var n = 0;
+    rows.forEach(function (row) {
+      var rt = rowTypes(row);
+      var geneHit;
+      if (!types.length) {
+        geneHit = true;
+      } else if (!rt.length) {
+        // Abilities with no gene recipe (Bash, Unknown) don't match any chip filter.
+        geneHit = false;
+      } else {
+        geneHit = types.every(function (t) { return rt.indexOf(t) >= 0; });
+      }
+      var textHit = !q
+        || row.dataset.name.toLowerCase().indexOf(q) >= 0
+        || row.dataset.recipe.toLowerCase().indexOf(q) >= 0
+        || row.dataset.effects.toLowerCase().indexOf(q) >= 0;
+      var hit = geneHit && textHit;
+      row.classList.toggle('hidden', !hit);
+      if (hit) n++;
+    });
+    countEl.textContent = n + ' / ' + totalCount;
+  }
+
+  search.addEventListener('input', update);
+
+  geneChips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      var t = chip.dataset.type;
+      if (activeTypes.has(t)) { activeTypes.delete(t); } else { activeTypes.add(t); }
+      syncChips();
+      update();
+    });
+  });
+
+  allChip.addEventListener('click', function () {
+    activeTypes.clear();
+    syncChips();
+    update();
+  });
+
+  sortHeaders.forEach(function (h) {
+    h.addEventListener('click', function () {
+      var f = h.dataset.sort;
+      if (sortField === f) {
+        sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortField = f;
+        sortDir = 'asc';
+      }
+      syncSortHeaders();
+      applySort();
+    });
+  });
+
+  // Populate detail view (.ld) on first open using the JS formatter
+  // (ability_format.js). It mirrors the device's drawAbilityDetailBlock()
+  // (ui.cpp) so the web preview matches what the device renders.
+  rows.forEach(function (row) {
+    row.addEventListener('click', function () {
+      row.classList.toggle('open');
+      var ld = row.querySelector('.ld');
+      if (ld && !ld.dataset.populated && typeof formatAbilityDetail === 'function') {
+        var idx = parseInt(row.dataset.idx, 10);
+        var ab = ABILITIES[idx];
+        if (ab) {
+          // Multi-line detail; render as <br>-separated text.
+          var detail = formatAbilityDetail(ab);
+          ld.innerHTML = detail.split('\n').map(function (line) {
+            return line.replace(/[<>&"]/g, function (c) {
+              return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c];
+            });
+          }).join('<br>');
+          ld.dataset.populated = '1';
+        }
+      }
+    });
+  });
+
+  syncChips();
+  syncSortHeaders();
+  update();
+}());
+
+</script>
+</body>
+</html>
