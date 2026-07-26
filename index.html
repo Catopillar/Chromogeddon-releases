@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chromogeddon — Docs</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      margin: 0; padding: 2.5rem 1.25rem;
+      font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #10131a; color: #e6e9f0;
+    }
+    main { max-width: 44rem; margin: 0 auto; }
+    h1 { margin: 0 0 .25rem; font-size: 1.9rem; letter-spacing: -.01em; }
+    .sub { color: #8b93a7; margin: 0 0 2rem; }
+    ul { list-style: none; padding: 0; margin: 0; }
+    li + li { margin-top: .75rem; }
+    a.card {
+      display: block; padding: 1rem 1.15rem; border-radius: 10px;
+      background: #1a1f2b; border: 1px solid #2a3140;
+      text-decoration: none; color: inherit;
+    }
+    a.card:hover { border-color: #4f7cff; background: #1e2431; }
+    a.card b { display: block; color: #7aa2ff; font-size: 1.05rem; }
+    a.card span { color: #8b93a7; font-size: .9rem; }
+    footer { margin-top: 2.5rem; color: #6b7387; font-size: .85rem; }
+    footer a { color: #7aa2ff; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Chromogeddon</h1>
+  <p class="sub">Reference docs for the Chromogeddon virtual pet device.</p>
+  <ul>
+    <li>
+      <a class="card" href="abilities.html">
+        <b>Ability Reference</b>
+        <span>Every ability: gene recipe, power, effects, and description.</span>
+      </a>
+    </li>
+    <li>
+      <a class="card" href="https://github.com/Catopillar/Chromogeddon-releases/releases">
+        <b>Firmware Releases</b>
+        <span>OTA manifests and per-hardware-revision firmware binaries.</span>
+      </a>
+    </li>
+  </ul>
+  <footer>
+    Updated automatically on each firmware publish.
+    Source: <a href="https://github.com/Catopillar/Chromogeddon-releases">Chromogeddon-releases</a>
+  </footer>
+</main>
+</body>
+</html>
