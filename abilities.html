@@ -99,6 +99,9 @@ h1 { font-size: 18px; margin-bottom: 4px; }
   letter-spacing: 0.02em;
   transition: background 0.12s, color 0.12s;
   user-select: none;
+  /* Chips live in a horizontally-scrolling strip on mobile; this drops the
+     double-tap-zoom wait so a tap registers immediately. */
+  touch-action: manipulation;
 }
 .chip:hover { opacity: 0.8; }
 .chip.active { color: var(--chip-act-fg); border-color: transparent; }
@@ -130,6 +133,7 @@ h1 { font-size: 18px; margin-bottom: 4px; }
 .header-row .sortable {
   cursor: pointer;
   user-select: none;
+  touch-action: manipulation;
   transition: background 0.12s, color 0.12s;
   border-radius: 4px;
   padding: 2px 4px;
@@ -149,6 +153,7 @@ h1 { font-size: 18px; margin-bottom: 4px; }
   padding: 5px 10px;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
+  touch-action: manipulation;
 }
 .row:nth-child(odd) { background: var(--row-alt); }
 .row:hover { background: var(--header-bg); }
@@ -316,8 +321,14 @@ span.none     { color: var(--muted); }
   /* "Effects" is the one non-sortable header — no place for it in the bar. */
   .header-row > div:not(.sortable) { display: none; }
 
-  /* Each ability row becomes a card. */
-  .row.grid {
+  /* Each ability row becomes a card.
+
+     The :not(.hidden) is load-bearing, not decoration. `.row.hidden
+     { display: none }` in the base CSS has the same (0,2,0) specificity as a
+     bare `.row.grid`, and this media query comes later in the stylesheet -- so
+     `.row.grid { display: block }` would win and the search / gene-chip filter
+     would silently stop hiding rows on mobile only. */
+  .row.grid:not(.hidden) {
     display: block;
     padding: 12px 12px 11px;
     margin-bottom: 8px;
@@ -384,7 +395,7 @@ span.none     { color: var(--muted); }
 
 <p class="note">Auto-generated from <code>tools/abilities.json</code> — do not edit by hand.
 Run <code>python tools/build_abilities.py</code> from the repo root to regenerate.
-Last updated: 2026-07-26 19:11 UTC</p>
+Last updated: 2026-07-27 16:35 UTC</p>
 
 <h1>Chromogeddon — Abilities (99)</h1>
 <p class="fwver">Firmware <b>v0.8</b> &middot; build <b>b466</b> &middot; PvP protocol <b>v39</b></p>
